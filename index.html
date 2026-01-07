@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PokéBuilder - Monte seu Time</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">
+                <span class="pokeball"></span>
+                PokéBuilder
+            </h1>
+            <p class="subtitle">Monte seu time Pokémon equilibrado</p>
+        </div>
+    </header>
+
+    <main class="main container">
+        <!-- Seção de Busca -->
+        <section class="search-section">
+            <h2>Buscar por Tipo</h2>
+            <div class="search-controls">
+                <div class="type-selector">
+                    <label for="type1">Tipo Principal</label>
+                    <select id="type1">
+                        <option value="">Selecione um tipo...</option>
+                    </select>
+                </div>
+                <div class="type-selector">
+                    <label for="type2">Tipo Secundário (opcional)</label>
+                    <select id="type2">
+                        <option value="">Qualquer</option>
+                    </select>
+                </div>
+                <button id="searchBtn" class="btn-search">
+                    <span class="search-icon">🔍</span>
+                    Buscar Pokémon
+                </button>
+            </div>
+        </section>
+
+        <!-- Área do Time -->
+        <section class="team-section">
+            <div class="team-header">
+                <h2>Meu Time <span id="teamCount">(0/6)</span></h2>
+                <button id="clearTeamBtn" class="btn-clear" disabled>Limpar Time</button>
+            </div>
+            <div class="team-grid" id="teamGrid">
+                <div class="team-slot empty" data-slot="0">
+                    <span class="slot-number">1</span>
+                    <span class="slot-empty-text">Vazio</span>
+                </div>
+                <div class="team-slot empty" data-slot="1">
+                    <span class="slot-number">2</span>
+                    <span class="slot-empty-text">Vazio</span>
+                </div>
+                <div class="team-slot empty" data-slot="2">
+                    <span class="slot-number">3</span>
+                    <span class="slot-empty-text">Vazio</span>
+                </div>
+                <div class="team-slot empty" data-slot="3">
+                    <span class="slot-number">4</span>
+                    <span class="slot-empty-text">Vazio</span>
+                </div>
+                <div class="team-slot empty" data-slot="4">
+                    <span class="slot-number">5</span>
+                    <span class="slot-empty-text">Vazio</span>
+                </div>
+                <div class="team-slot empty" data-slot="5">
+                    <span class="slot-number">6</span>
+                    <span class="slot-empty-text">Vazio</span>
+                </div>
+            </div>
+            
+            <!-- Análise do Time -->
+            <div class="team-analysis" id="teamAnalysis" style="display: none;">
+                <h3>Análise do Time</h3>
+                <div class="analysis-grid">
+                    <div class="analysis-card weaknesses">
+                        <h4>⚠️ Fraquezas Comuns</h4>
+                        <div class="type-badges" id="teamWeaknesses"></div>
+                    </div>
+                    <div class="analysis-card resistances">
+                        <h4>🛡️ Resistências</h4>
+                        <div class="type-badges" id="teamResistances"></div>
+                    </div>
+                    <div class="analysis-card immunities">
+                        <h4>✨ Imunidades</h4>
+                        <div class="type-badges" id="teamImmunities"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Resultados da Busca -->
+        <section class="results-section">
+            <div class="results-header">
+                <h2>Resultados <span id="resultsCount"></span></h2>
+                <div class="results-sort">
+                    <label for="sortBy">Ordenar por:</label>
+                    <select id="sortBy">
+                        <option value="id">Número</option>
+                        <option value="name">Nome</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="loading" id="loading" style="display: none;">
+                <div class="pokeball-spinner"></div>
+                <p>Buscando Pokémon...</p>
+            </div>
+
+            <div class="no-results" id="noResults" style="display: none;">
+                <p>🔍 Nenhum Pokémon encontrado com esses tipos.</p>
+            </div>
+
+            <div class="pokemon-grid" id="pokemonGrid"></div>
+            
+            <div class="load-more" id="loadMore" style="display: none;">
+                <button id="loadMoreBtn" class="btn-load-more">Carregar Mais</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal de Detalhes do Pokémon -->
+    <div class="modal" id="pokemonModal">
+        <div class="modal-content">
+            <button class="modal-close" id="modalClose">&times;</button>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>Dados fornecidos por <a href="https://pokeapi.co/" target="_blank">PokéAPI</a></p>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
