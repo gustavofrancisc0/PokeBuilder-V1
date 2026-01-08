@@ -154,7 +154,7 @@ async function loadMovesTranslations() {
   }
 
   try {
-    const response = await fetch("moves-pt.json");
+    const response = await fetch("data/moves-pt.json");
     if (response.ok) {
       state.movesTranslations = await response.json();
       console.log(

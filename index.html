@@ -3,8 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PokéBuilder - Monte seu Time</title>
-    <link rel="stylesheet" href="styles.css" />
+    <meta
+      name="description"
+      content="PokéBuilder - Monte seu time Pokémon equilibrado e explore a Pokédex completa"
+    />
+    <title>PokéBuilder - Monte seu Time & Wiki</title>
+    <link rel="stylesheet" href="css/styles.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -20,10 +24,23 @@
           PokéBuilder
         </h1>
         <p class="subtitle">Monte seu time Pokémon equilibrado</p>
+
+        <!-- Sistema de Abas Principal -->
+        <nav class="main-tabs">
+          <button class="main-tab active" data-tab="builder">
+            <span class="tab-icon">⚔️</span>
+            Team Builder
+          </button>
+          <button class="main-tab" data-tab="wiki">
+            <span class="tab-icon">📖</span>
+            Pokémon Wiki
+          </button>
+        </nav>
       </div>
     </header>
 
-    <main class="main container">
+    <!-- ==================== SEÇÃO TEAM BUILDER ==================== -->
+    <main class="main container tab-content active" id="builder-content">
       <!-- Seção de Busca -->
       <section class="search-section">
         <h2>Buscar por Tipo</h2>
@@ -132,11 +149,464 @@
       </section>
     </main>
 
+    <!-- ==================== SEÇÃO WIKI ==================== -->
+    <main class="main container tab-content" id="wiki-content">
+      <!-- Sub-navegação da Wiki -->
+      <nav class="wiki-nav">
+        <button class="wiki-tab active" data-wiki-tab="pokedex">
+          <span>📱</span> Pokédex
+        </button>
+        <button class="wiki-tab" data-wiki-tab="evolutions">
+          <span>🔄</span> Evoluções
+        </button>
+        <button class="wiki-tab" data-wiki-tab="natures">
+          <span>🎭</span> Naturezas
+        </button>
+        <button class="wiki-tab" data-wiki-tab="abilities">
+          <span>✨</span> Habilidades
+        </button>
+        <button class="wiki-tab" data-wiki-tab="items">
+          <span>🎒</span> Itens
+        </button>
+        <button class="wiki-tab" data-wiki-tab="berries">
+          <span>🍇</span> Berries
+        </button>
+        <button class="wiki-tab" data-wiki-tab="locations">
+          <span>🗺️</span> Regiões
+        </button>
+      </nav>
+
+      <!-- ===== POKÉDEX ===== -->
+      <section class="wiki-section active" id="pokedex-section">
+        <div class="wiki-header">
+          <h2>📱 Pokédex Nacional</h2>
+          <p>Pesquise e explore todos os Pokémon</p>
+        </div>
+
+        <!-- Busca e Filtros -->
+        <div class="wiki-search-box">
+          <div class="search-input-wrapper">
+            <span class="search-icon-wiki">🔍</span>
+            <input
+              type="text"
+              id="wikiSearch"
+              placeholder="Buscar por nome ou número..."
+              autocomplete="off"
+            />
+            <button
+              class="clear-search"
+              id="clearWikiSearch"
+              style="display: none"
+            >
+              ✕
+            </button>
+          </div>
+          <button class="btn-wiki-search" id="wikiSearchBtn">Buscar</button>
+        </div>
+
+        <div class="wiki-filters">
+          <div class="filter-group">
+            <label for="wikiTypeFilter">Tipo</label>
+            <select id="wikiTypeFilter">
+              <option value="">Todos os tipos</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="wikiGenFilter">Geração</label>
+            <select id="wikiGenFilter">
+              <option value="">Todas as gerações</option>
+              <option value="1">Geração I (Kanto)</option>
+              <option value="2">Geração II (Johto)</option>
+              <option value="3">Geração III (Hoenn)</option>
+              <option value="4">Geração IV (Sinnoh)</option>
+              <option value="5">Geração V (Unova)</option>
+              <option value="6">Geração VI (Kalos)</option>
+              <option value="7">Geração VII (Alola)</option>
+              <option value="8">Geração VIII (Galar)</option>
+              <option value="9">Geração IX (Paldea)</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="wikiSortFilter">Ordenar por</label>
+            <select id="wikiSortFilter">
+              <option value="id-asc">Número ↑</option>
+              <option value="id-desc">Número ↓</option>
+              <option value="name-asc">Nome A-Z</option>
+              <option value="name-desc">Nome Z-A</option>
+              <option value="height-desc">Maior Altura</option>
+              <option value="weight-desc">Maior Peso</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Stats Rápidos -->
+        <div class="wiki-stats-bar">
+          <div class="wiki-stat">
+            <span class="stat-number" id="totalPokemonCount">0</span>
+            <span class="stat-label">Pokémon Total</span>
+          </div>
+          <div class="wiki-stat">
+            <span class="stat-number" id="filteredPokemonCount">0</span>
+            <span class="stat-label">Exibindo</span>
+          </div>
+        </div>
+
+        <!-- Loading -->
+        <div class="wiki-loading" id="wikiLoading" style="display: none">
+          <div class="pokeball-spinner"></div>
+          <p>Carregando Pokédex...</p>
+        </div>
+
+        <!-- Grid de Pokémon -->
+        <div class="pokedex-grid" id="pokedexGrid"></div>
+
+        <!-- Carregar Mais -->
+        <div class="wiki-load-more" id="wikiLoadMore" style="display: none">
+          <button class="btn-load-more" id="wikiLoadMoreBtn">
+            Carregar Mais Pokémon
+          </button>
+        </div>
+      </section>
+
+      <!-- ===== EVOLUÇÕES ===== -->
+      <section class="wiki-section" id="evolutions-section">
+        <div class="wiki-header">
+          <h2>🔄 Cadeias de Evolução</h2>
+          <p>Descubra como os Pokémon evoluem</p>
+        </div>
+
+        <div class="wiki-search-box">
+          <div class="search-input-wrapper">
+            <span class="search-icon-wiki">🔍</span>
+            <input
+              type="text"
+              id="evolutionSearch"
+              placeholder="Digite o nome de um Pokémon..."
+              autocomplete="off"
+            />
+          </div>
+          <button class="btn-wiki-search" id="evolutionSearchBtn">
+            Ver Evolução
+          </button>
+        </div>
+
+        <!-- Resultado da Evolução -->
+        <div class="evolution-result" id="evolutionResult">
+          <div class="evolution-placeholder">
+            <span class="placeholder-icon">🔄</span>
+            <p>Digite o nome de um Pokémon para ver sua cadeia de evolução</p>
+          </div>
+        </div>
+
+        <!-- Evoluções Populares -->
+        <div class="popular-evolutions">
+          <h3>Evoluções Populares</h3>
+          <div class="popular-evolution-grid" id="popularEvolutions">
+            <button class="popular-evo-btn" data-pokemon="eevee">Eevee</button>
+            <button class="popular-evo-btn" data-pokemon="pikachu">
+              Pikachu
+            </button>
+            <button class="popular-evo-btn" data-pokemon="charmander">
+              Charmander
+            </button>
+            <button class="popular-evo-btn" data-pokemon="bulbasaur">
+              Bulbasaur
+            </button>
+            <button class="popular-evo-btn" data-pokemon="squirtle">
+              Squirtle
+            </button>
+            <button class="popular-evo-btn" data-pokemon="ralts">Ralts</button>
+            <button class="popular-evo-btn" data-pokemon="magikarp">
+              Magikarp
+            </button>
+            <button class="popular-evo-btn" data-pokemon="riolu">Riolu</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== NATUREZAS ===== -->
+      <section class="wiki-section" id="natures-section">
+        <div class="wiki-header">
+          <h2>🎭 Naturezas Pokémon</h2>
+          <p>Entenda como as naturezas afetam os stats do seu Pokémon</p>
+        </div>
+
+        <div class="nature-info-box">
+          <h3>💡 Como funcionam as Naturezas?</h3>
+          <p>
+            Cada Pokémon tem uma natureza que afeta seus stats. Uma natureza
+            aumenta um stat em <strong>+10%</strong> e diminui outro em
+            <strong>-10%</strong>. Naturezas neutras não afetam nenhum stat.
+          </p>
+        </div>
+
+        <div class="nature-filter">
+          <label for="natureStatFilter">Filtrar por stat aumentado:</label>
+          <select id="natureStatFilter">
+            <option value="">Todas as Naturezas</option>
+            <option value="attack">⚔️ Ataque</option>
+            <option value="defense">🛡️ Defesa</option>
+            <option value="special-attack">💫 Ataque Especial</option>
+            <option value="special-defense">🔮 Defesa Especial</option>
+            <option value="speed">💨 Velocidade</option>
+            <option value="neutral">⚖️ Neutras</option>
+          </select>
+        </div>
+
+        <div class="natures-loading" id="naturesLoading">
+          <div class="pokeball-spinner"></div>
+          <p>Carregando naturezas...</p>
+        </div>
+
+        <div
+          class="natures-table-container"
+          id="naturesTableContainer"
+          style="display: none"
+        >
+          <table class="natures-table" id="naturesTable">
+            <thead>
+              <tr>
+                <th>Natureza</th>
+                <th>Nome (PT)</th>
+                <th class="stat-up">↑ Aumenta</th>
+                <th class="stat-down">↓ Diminui</th>
+                <th>Sabor Favorito</th>
+                <th>Sabor Odiado</th>
+              </tr>
+            </thead>
+            <tbody id="naturesTableBody"></tbody>
+          </table>
+        </div>
+
+        <!-- Calculadora de Nature -->
+        <div class="nature-calculator">
+          <h3>🧮 Calculadora de Natureza</h3>
+          <p>Veja como uma natureza afetaria os stats base de um Pokémon</p>
+          <div class="calc-inputs">
+            <div class="calc-input-group">
+              <label for="calcNature">Natureza</label>
+              <select id="calcNature">
+                <option value="">Selecione...</option>
+              </select>
+            </div>
+            <div class="calc-input-group">
+              <label for="calcBaseStat">Stat Base</label>
+              <input
+                type="number"
+                id="calcBaseStat"
+                placeholder="Ex: 100"
+                min="1"
+                max="255"
+              />
+            </div>
+            <button class="btn-calc" id="calcNatureBtn">Calcular</button>
+          </div>
+          <div class="calc-result" id="calcNatureResult"></div>
+        </div>
+      </section>
+
+      <!-- ===== HABILIDADES ===== -->
+      <section class="wiki-section" id="abilities-section">
+        <div class="wiki-header">
+          <h2>✨ Habilidades Pokémon</h2>
+          <p>Explore todas as habilidades e seus efeitos</p>
+        </div>
+
+        <div class="wiki-search-box">
+          <div class="search-input-wrapper">
+            <span class="search-icon-wiki">🔍</span>
+            <input
+              type="text"
+              id="abilitySearch"
+              placeholder="Buscar habilidade..."
+              autocomplete="off"
+            />
+          </div>
+          <button class="btn-wiki-search" id="abilitySearchBtn">Buscar</button>
+        </div>
+
+        <div class="abilities-stats">
+          <span id="abilitiesCount">0 habilidades encontradas</span>
+        </div>
+
+        <div class="wiki-loading" id="abilitiesLoading" style="display: none">
+          <div class="pokeball-spinner"></div>
+          <p>Carregando habilidades...</p>
+        </div>
+
+        <div class="abilities-grid" id="abilitiesGrid"></div>
+
+        <div
+          class="wiki-load-more"
+          id="abilitiesLoadMore"
+          style="display: none"
+        >
+          <button class="btn-load-more" id="abilitiesLoadMoreBtn">
+            Carregar Mais
+          </button>
+        </div>
+      </section>
+
+      <!-- ===== ITENS ===== -->
+      <section class="wiki-section" id="items-section">
+        <div class="wiki-header">
+          <h2>🎒 Itens Pokémon</h2>
+          <p>Todos os itens do mundo Pokémon</p>
+        </div>
+
+        <div class="wiki-filters">
+          <div class="filter-group">
+            <label for="itemCategoryFilter">Categoria</label>
+            <select id="itemCategoryFilter">
+              <option value="">Todas as categorias</option>
+              <option value="healing">🏥 Cura</option>
+              <option value="pokeballs">🔴 Pokébolas</option>
+              <option value="held-items">💎 Itens Seguráveis</option>
+              <option value="evolution">✨ Evolução</option>
+              <option value="medicine">💊 Medicina</option>
+              <option value="vitamins">💪 Vitaminas</option>
+              <option value="tm">💿 TMs/HMs</option>
+            </select>
+          </div>
+          <div class="search-input-wrapper compact">
+            <input
+              type="text"
+              id="itemSearch"
+              placeholder="Buscar item..."
+              autocomplete="off"
+            />
+          </div>
+        </div>
+
+        <div class="wiki-loading" id="itemsLoading" style="display: none">
+          <div class="pokeball-spinner"></div>
+          <p>Carregando itens...</p>
+        </div>
+
+        <div class="items-grid" id="itemsGrid"></div>
+
+        <div class="wiki-load-more" id="itemsLoadMore" style="display: none">
+          <button class="btn-load-more" id="itemsLoadMoreBtn">
+            Carregar Mais
+          </button>
+        </div>
+      </section>
+
+      <!-- ===== BERRIES ===== -->
+      <section class="wiki-section" id="berries-section">
+        <div class="wiki-header">
+          <h2>🍇 Berries</h2>
+          <p>Descubra todas as berries e seus efeitos</p>
+        </div>
+
+        <div class="berries-info">
+          <div class="berry-flavor-guide">
+            <h3>Guia de Sabores</h3>
+            <div class="flavor-grid">
+              <div class="flavor-item spicy">🌶️ Picante - Gosta: +ATK</div>
+              <div class="flavor-item dry">🍂 Seco - Gosta: +SP.ATK</div>
+              <div class="flavor-item sweet">🍬 Doce - Gosta: +SPD</div>
+              <div class="flavor-item bitter">🍵 Amargo - Gosta: +SP.DEF</div>
+              <div class="flavor-item sour">🍋 Azedo - Gosta: +DEF</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="wiki-loading" id="berriesLoading" style="display: none">
+          <div class="pokeball-spinner"></div>
+          <p>Carregando berries...</p>
+        </div>
+
+        <div class="berries-grid" id="berriesGrid"></div>
+      </section>
+
+      <!-- ===== REGIÕES/LOCALIZAÇÕES ===== -->
+      <section class="wiki-section" id="locations-section">
+        <div class="wiki-header">
+          <h2>🗺️ Regiões do Mundo Pokémon</h2>
+          <p>Explore as diferentes regiões e suas localizações</p>
+        </div>
+
+        <div class="regions-grid" id="regionsGrid">
+          <div class="region-card" data-region="kanto">
+            <div class="region-icon">🏯</div>
+            <h3>Kanto</h3>
+            <p>Geração I</p>
+            <span class="pokemon-range">#001 - #151</span>
+          </div>
+          <div class="region-card" data-region="johto">
+            <div class="region-icon">🌸</div>
+            <h3>Johto</h3>
+            <p>Geração II</p>
+            <span class="pokemon-range">#152 - #251</span>
+          </div>
+          <div class="region-card" data-region="hoenn">
+            <div class="region-icon">🏝️</div>
+            <h3>Hoenn</h3>
+            <p>Geração III</p>
+            <span class="pokemon-range">#252 - #386</span>
+          </div>
+          <div class="region-card" data-region="sinnoh">
+            <div class="region-icon">🏔️</div>
+            <h3>Sinnoh</h3>
+            <p>Geração IV</p>
+            <span class="pokemon-range">#387 - #493</span>
+          </div>
+          <div class="region-card" data-region="unova">
+            <div class="region-icon">🌆</div>
+            <h3>Unova</h3>
+            <p>Geração V</p>
+            <span class="pokemon-range">#494 - #649</span>
+          </div>
+          <div class="region-card" data-region="kalos">
+            <div class="region-icon">🗼</div>
+            <h3>Kalos</h3>
+            <p>Geração VI</p>
+            <span class="pokemon-range">#650 - #721</span>
+          </div>
+          <div class="region-card" data-region="alola">
+            <div class="region-icon">🌺</div>
+            <h3>Alola</h3>
+            <p>Geração VII</p>
+            <span class="pokemon-range">#722 - #809</span>
+          </div>
+          <div class="region-card" data-region="galar">
+            <div class="region-icon">👑</div>
+            <h3>Galar</h3>
+            <p>Geração VIII</p>
+            <span class="pokemon-range">#810 - #905</span>
+          </div>
+          <div class="region-card" data-region="paldea">
+            <div class="region-icon">🏰</div>
+            <h3>Paldea</h3>
+            <p>Geração IX</p>
+            <span class="pokemon-range">#906 - #1025</span>
+          </div>
+        </div>
+
+        <!-- Detalhes da Região -->
+        <div class="region-details" id="regionDetails" style="display: none">
+          <button class="btn-back-regions" id="backToRegions">
+            ← Voltar às Regiões
+          </button>
+          <div class="region-details-content" id="regionDetailsContent"></div>
+        </div>
+      </section>
+    </main>
+
     <!-- Modal de Detalhes do Pokémon -->
     <div class="modal" id="pokemonModal">
-      <div class="modal-content">
+      <div class="modal-content modal-wiki">
         <button class="modal-close" id="modalClose">&times;</button>
         <div class="modal-body" id="modalBody"></div>
+      </div>
+    </div>
+
+    <!-- Modal de Detalhes (Habilidade/Item/etc) -->
+    <div class="modal" id="wikiDetailModal">
+      <div class="modal-content modal-detail">
+        <button class="modal-close" id="wikiDetailClose">&times;</button>
+        <div class="modal-body" id="wikiDetailBody"></div>
       </div>
     </div>
 
@@ -149,6 +619,7 @@
       </div>
     </footer>
 
-    <script src="app.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/wiki.js"></script>
   </body>
 </html>

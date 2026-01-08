@@ -1,2 +1,19 @@
-generate-moves.js
-translate-moves.html
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores e IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Arquivos temporarios
+*.tmp
+*.temp
+nul
