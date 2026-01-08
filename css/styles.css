@@ -1336,3 +1336,1190 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--gray-500);
 }
+
+/* ========================================
+   SISTEMA DE ABAS PRINCIPAIS
+   ======================================== */
+
+.main-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 25px;
+}
+
+.main-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 30px;
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 30px;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.main-tab:hover {
+  background: rgba(255, 255, 255, 0.25);
+  color: var(--white);
+}
+
+.main-tab.active {
+  background: var(--white);
+  color: var(--primary);
+  border-color: var(--white);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.main-tab .tab-icon {
+  font-size: 1.2rem;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* ========================================
+   WIKI - NAVEGAÇÃO SECUNDÁRIA
+   ======================================== */
+
+.wiki-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: var(--white);
+  padding: 15px;
+  border-radius: var(--radius);
+  margin-bottom: 25px;
+  box-shadow: var(--shadow);
+  justify-content: center;
+}
+
+.wiki-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  background: var(--gray-100);
+  color: var(--gray-700);
+  border: 2px solid transparent;
+  border-radius: 25px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.wiki-tab:hover {
+  background: var(--gray-200);
+  color: var(--dark);
+}
+
+.wiki-tab.active {
+  background: var(--primary);
+  color: var(--white);
+  border-color: var(--primary);
+}
+
+.wiki-section {
+  display: none;
+}
+
+.wiki-section.active {
+  display: block;
+}
+
+/* ========================================
+   WIKI - HEADER E BUSCA
+   ======================================== */
+
+.wiki-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.wiki-header h2 {
+  font-size: 2rem;
+  color: var(--dark);
+  margin-bottom: 8px;
+}
+
+.wiki-header p {
+  color: var(--gray-600);
+  font-size: 1.1rem;
+}
+
+.wiki-search-box {
+  display: flex;
+  gap: 15px;
+  max-width: 600px;
+  margin: 0 auto 25px;
+}
+
+.search-input-wrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input-wrapper.compact {
+  max-width: 250px;
+}
+
+.search-icon-wiki {
+  position: absolute;
+  left: 15px;
+  font-size: 1.1rem;
+  color: var(--gray-500);
+  pointer-events: none;
+}
+
+.search-input-wrapper input {
+  width: 100%;
+  padding: 14px 45px 14px 45px;
+  border: 2px solid var(--gray-300);
+  border-radius: 30px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: all 0.3s;
+}
+
+.search-input-wrapper input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.15);
+}
+
+.clear-search {
+  position: absolute;
+  right: 15px;
+  background: var(--gray-400);
+  color: var(--white);
+  border: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clear-search:hover {
+  background: var(--gray-600);
+}
+
+.btn-wiki-search {
+  padding: 14px 28px;
+  background: linear-gradient(
+    135deg,
+    var(--primary) 0%,
+    var(--primary-dark) 100%
+  );
+  color: var(--white);
+  border: none;
+  border-radius: 30px;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+
+.btn-wiki-search:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ========================================
+   WIKI - FILTROS
+   ======================================== */
+
+.wiki-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  background: var(--white);
+  padding: 20px;
+  border-radius: var(--radius);
+  margin-bottom: 25px;
+  box-shadow: var(--shadow);
+  align-items: flex-end;
+}
+
+.filter-group {
+  flex: 1;
+  min-width: 180px;
+}
+
+.filter-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--gray-700);
+}
+
+.filter-group select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  font-family: inherit;
+  cursor: pointer;
+  background: var(--white);
+  transition: all 0.3s;
+}
+
+.filter-group select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* ========================================
+   WIKI - STATS BAR
+   ======================================== */
+
+.wiki-stats-bar {
+  display: flex;
+  gap: 30px;
+  justify-content: center;
+  margin-bottom: 25px;
+  padding: 15px;
+  background: linear-gradient(135deg, var(--secondary) 0%, var(--dark) 100%);
+  border-radius: var(--radius);
+  color: var(--white);
+}
+
+.wiki-stat {
+  text-align: center;
+}
+
+.wiki-stat .stat-number {
+  display: block;
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.wiki-stat .stat-label {
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+/* ========================================
+   WIKI - LOADING
+   ======================================== */
+
+.wiki-loading {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.wiki-loading p {
+  margin-top: 15px;
+  color: var(--gray-600);
+}
+
+/* ========================================
+   POKÉDEX GRID
+   ======================================== */
+
+.pokedex-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 15px;
+}
+
+.pokedex-card {
+  background: var(--white);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 15px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.pokedex-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60%;
+  background: linear-gradient(
+    180deg,
+    var(--type-color, var(--gray-200)) 0%,
+    transparent 100%
+  );
+  opacity: 0.15;
+  transition: opacity 0.3s;
+}
+
+.pokedex-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--type-color, var(--gray-400));
+}
+
+.pokedex-card:hover::before {
+  opacity: 0.25;
+}
+
+.pokedex-card-number {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  font-weight: 600;
+  background: var(--white);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.pokedex-card-sprite {
+  width: 90px;
+  height: 90px;
+  object-fit: contain;
+  position: relative;
+  z-index: 1;
+}
+
+.pokedex-card-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--dark);
+  text-transform: capitalize;
+  margin: 8px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.pokedex-card-types {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+}
+
+.pokedex-type-badge {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--white);
+  text-transform: capitalize;
+}
+
+/* ========================================
+   EVOLUÇÕES
+   ======================================== */
+
+.evolution-result {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 40px;
+  box-shadow: var(--shadow);
+  min-height: 300px;
+}
+
+.evolution-placeholder {
+  text-align: center;
+  color: var(--gray-500);
+}
+
+.evolution-placeholder .placeholder-icon {
+  font-size: 4rem;
+  display: block;
+  margin-bottom: 15px;
+  opacity: 0.5;
+}
+
+.evolution-chain {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.evolution-pokemon {
+  text-align: center;
+  padding: 20px;
+  background: var(--gray-100);
+  border-radius: var(--radius);
+  min-width: 140px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.evolution-pokemon:hover {
+  transform: scale(1.05);
+  background: var(--white);
+  box-shadow: var(--shadow);
+}
+
+.evolution-pokemon img {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+}
+
+.evolution-pokemon .evo-name {
+  font-weight: 600;
+  text-transform: capitalize;
+  color: var(--dark);
+  margin-top: 5px;
+}
+
+.evolution-pokemon .evo-number {
+  font-size: 0.8rem;
+  color: var(--gray-500);
+}
+
+.evolution-arrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--gray-500);
+  padding: 10px;
+}
+
+.evolution-arrow .arrow-icon {
+  font-size: 2rem;
+}
+
+.evolution-arrow .evo-condition {
+  font-size: 0.75rem;
+  text-align: center;
+  max-width: 100px;
+  background: var(--secondary);
+  color: var(--white);
+  padding: 4px 10px;
+  border-radius: 15px;
+  margin-top: 5px;
+}
+
+.evolution-branches {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.evolution-branch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.popular-evolutions {
+  margin-top: 40px;
+  padding: 25px;
+  background: var(--gray-100);
+  border-radius: var(--radius);
+}
+
+.popular-evolutions h3 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: var(--dark);
+}
+
+.popular-evolution-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.popular-evo-btn {
+  padding: 10px 20px;
+  background: var(--white);
+  color: var(--dark);
+  border: 2px solid var(--gray-300);
+  border-radius: 25px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-transform: capitalize;
+}
+
+.popular-evo-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateY(-2px);
+}
+
+/* ========================================
+   NATUREZAS
+   ======================================== */
+
+.nature-info-box {
+  background: linear-gradient(135deg, var(--secondary) 0%, var(--dark) 100%);
+  color: var(--white);
+  padding: 25px;
+  border-radius: var(--radius);
+  margin-bottom: 25px;
+}
+
+.nature-info-box h3 {
+  margin-bottom: 10px;
+}
+
+.nature-info-box strong {
+  color: var(--light);
+}
+
+.nature-filter {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.nature-filter label {
+  font-weight: 500;
+  color: var(--gray-700);
+}
+
+.nature-filter select {
+  padding: 10px 20px;
+  border: 2px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.natures-loading {
+  text-align: center;
+  padding: 40px;
+}
+
+.natures-table-container {
+  background: var(--white);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.natures-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.natures-table th {
+  background: var(--dark);
+  color: var(--white);
+  padding: 15px;
+  text-align: left;
+  font-weight: 600;
+}
+
+.natures-table th.stat-up {
+  color: #4ade80;
+}
+
+.natures-table th.stat-down {
+  color: #f87171;
+}
+
+.natures-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.natures-table tr:hover {
+  background: var(--gray-100);
+}
+
+.natures-table tr.neutral {
+  background: var(--gray-50);
+}
+
+.natures-table .stat-increase {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.natures-table .stat-decrease {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.natures-table .neutral-text {
+  color: var(--gray-500);
+  font-style: italic;
+}
+
+.nature-calculator {
+  margin-top: 40px;
+  background: var(--white);
+  padding: 30px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.nature-calculator h3 {
+  margin-bottom: 10px;
+  color: var(--dark);
+}
+
+.nature-calculator > p {
+  color: var(--gray-600);
+  margin-bottom: 20px;
+}
+
+.calc-inputs {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.calc-input-group {
+  flex: 1;
+  min-width: 150px;
+}
+
+.calc-input-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: var(--gray-700);
+}
+
+.calc-input-group select,
+.calc-input-group input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+.btn-calc {
+  padding: 12px 25px;
+  background: var(--secondary);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-calc:hover {
+  background: var(--dark);
+}
+
+.calc-result {
+  margin-top: 20px;
+  padding: 20px;
+  background: var(--gray-100);
+  border-radius: var(--radius-sm);
+  display: none;
+}
+
+.calc-result.show {
+  display: block;
+}
+
+.calc-result .result-stat {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.calc-result .result-stat.increase {
+  color: #16a34a;
+}
+
+.calc-result .result-stat.decrease {
+  color: #dc2626;
+}
+
+/* ========================================
+   HABILIDADES
+   ======================================== */
+
+.abilities-stats {
+  text-align: center;
+  margin-bottom: 20px;
+  color: var(--gray-600);
+}
+
+.abilities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 15px;
+}
+
+.ability-card {
+  background: var(--white);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.ability-card:hover {
+  border-color: var(--secondary);
+  box-shadow: var(--shadow);
+  transform: translateY(-2px);
+}
+
+.ability-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.ability-name {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--dark);
+  text-transform: capitalize;
+}
+
+.ability-badge {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.ability-badge.hidden {
+  background: #7c3aed;
+  color: var(--white);
+}
+
+.ability-badge.normal {
+  background: var(--gray-200);
+  color: var(--gray-700);
+}
+
+.ability-description {
+  color: var(--gray-600);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* ========================================
+   ITENS
+   ======================================== */
+
+.items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.item-card {
+  background: var(--white);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.item-card:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow);
+  transform: translateY(-2px);
+}
+
+.item-sprite {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  background: var(--gray-100);
+  border-radius: var(--radius-sm);
+  padding: 5px;
+}
+
+.item-info {
+  flex: 1;
+}
+
+.item-name {
+  font-weight: 600;
+  color: var(--dark);
+  text-transform: capitalize;
+  font-size: 0.95rem;
+}
+
+.item-category {
+  font-size: 0.8rem;
+  color: var(--gray-500);
+  text-transform: capitalize;
+}
+
+/* ========================================
+   BERRIES
+   ======================================== */
+
+.berries-info {
+  margin-bottom: 30px;
+}
+
+.berry-flavor-guide {
+  background: var(--white);
+  padding: 25px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.berry-flavor-guide h3 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: var(--dark);
+}
+
+.flavor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.flavor-item {
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+.flavor-item.spicy {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.flavor-item.dry {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.flavor-item.sweet {
+  background: #fce7f3;
+  color: #db2777;
+}
+
+.flavor-item.bitter {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.flavor-item.sour {
+  background: #fef9c3;
+  color: #ca8a04;
+}
+
+.berries-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 15px;
+}
+
+.berry-card {
+  background: var(--white);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.berry-card:hover {
+  border-color: var(--secondary);
+  box-shadow: var(--shadow);
+  transform: translateY(-3px);
+}
+
+.berry-sprite {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+}
+
+.berry-name {
+  font-weight: 600;
+  color: var(--dark);
+  text-transform: capitalize;
+  margin: 10px 0 5px;
+}
+
+.berry-flavors {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.berry-flavor-tag {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+/* ========================================
+   REGIÕES
+   ======================================== */
+
+.regions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.region-card {
+  background: var(--white);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 30px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.region-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--primary);
+}
+
+.region-icon {
+  font-size: 3rem;
+  margin-bottom: 15px;
+}
+
+.region-card h3 {
+  font-size: 1.3rem;
+  color: var(--dark);
+  margin-bottom: 5px;
+}
+
+.region-card p {
+  color: var(--gray-500);
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+
+.pokemon-range {
+  display: inline-block;
+  background: var(--primary);
+  color: var(--white);
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.region-details {
+  background: var(--white);
+  padding: 30px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.btn-back-regions {
+  background: none;
+  border: none;
+  color: var(--secondary);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 20px;
+  font-family: inherit;
+  transition: color 0.3s;
+}
+
+.btn-back-regions:hover {
+  color: var(--dark);
+}
+
+/* ========================================
+   WIKI MODAL
+   ======================================== */
+
+.modal-wiki {
+  max-width: 700px;
+}
+
+.modal-detail {
+  max-width: 500px;
+}
+
+.wiki-load-more {
+  text-align: center;
+  margin-top: 30px;
+}
+
+/* ========================================
+   RESPONSIVIDADE WIKI
+   ======================================== */
+
+@media (max-width: 768px) {
+  .main-tabs {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .main-tab {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .wiki-nav {
+    gap: 5px;
+    padding: 10px;
+  }
+
+  .wiki-tab {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+
+  .wiki-tab span {
+    display: none;
+  }
+
+  .wiki-search-box {
+    flex-direction: column;
+  }
+
+  .wiki-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .evolution-chain {
+    flex-direction: column;
+  }
+
+  .evolution-arrow {
+    transform: rotate(90deg);
+  }
+
+  .natures-table-container {
+    overflow-x: auto;
+  }
+
+  .natures-table {
+    min-width: 600px;
+  }
+
+  .pokedex-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  }
+}
+
+/* ========================================
+   WIKI DETAIL MODAL
+   ======================================== */
+
+.wiki-detail-content {
+  padding: 10px;
+}
+
+.wiki-detail-content h2 {
+  color: var(--dark);
+  font-size: 1.8rem;
+  text-transform: capitalize;
+  margin-bottom: 10px;
+}
+
+.detail-section {
+  margin: 20px 0;
+  padding: 15px;
+  background: var(--gray-100);
+  border-radius: var(--radius-sm);
+}
+
+.detail-section h4 {
+  color: var(--gray-700);
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-section p {
+  color: var(--gray-600);
+  line-height: 1.6;
+}
+
+.pokemon-ability-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pokemon-ability-tag {
+  background: var(--secondary);
+  color: var(--white);
+  padding: 5px 12px;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.pokemon-ability-more {
+  background: var(--gray-300);
+  color: var(--gray-700);
+  padding: 5px 12px;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Pokemon Type in Modal */
+.pokemon-type {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--white);
+  text-transform: capitalize;
+  margin-right: 5px;
+}
+
+/* Gray 50 for neutral natures */
+.gray-50 {
+  background: #f9fafb;
+}
+
+tr.neutral td {
+  background: #f9fafb;
+}

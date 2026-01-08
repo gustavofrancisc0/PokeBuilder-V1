@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tradutor de Movimentos Pokémon</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+
+      h1 {
+        color: #667eea;
+        margin-bottom: 10px;
+        font-size: 2.5em;
+      }
+
+      .subtitle {
+        color: #666;
+        margin-bottom: 30px;
+      }
+
+      .section {
+        margin-bottom: 30px;
+      }
+
+      .section h2 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 1.5em;
+      }
+
+      .btn {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        transition: all 0.3s;
+        margin-right: 10px;
+      }
+
+      .btn:hover {
+        background: #5568d3;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+      }
+
+      .btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .progress {
+        margin-top: 20px;
+        padding: 15px;
+        background: #f5f5f5;
+        border-radius: 8px;
+        display: none;
+      }
+
+      .progress.active {
+        display: block;
+      }
+
+      .progress-bar {
+        height: 30px;
+        background: #e0e0e0;
+        border-radius: 15px;
+        overflow: hidden;
+        margin: 10px 0;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        transition: width 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+      }
+
+      .log {
+        background: #1e1e1e;
+        color: #00ff00;
+        padding: 20px;
+        border-radius: 8px;
+        font-family: "Courier New", monospace;
+        font-size: 14px;
+        max-height: 400px;
+        overflow-y: auto;
+        margin-top: 20px;
+      }
+
+      .log-entry {
+        margin-bottom: 5px;
+      }
+
+      .info {
+        color: #00bfff;
+      }
+      .success {
+        color: #00ff00;
+      }
+      .error {
+        color: #ff4444;
+      }
+      .warning {
+        color: #ffaa00;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🎮 Tradutor de Movimentos Pokémon</h1>
+      <p class="subtitle">
+        Gere e traduza automaticamente as descrições dos ataques
+      </p>
+
+      <div class="section">
+        <h2>Passo 1: Buscar Movimentos da API</h2>
+        <button class="btn" id="fetchBtn" onclick="fetchAllMoves()">
+          📥 Buscar Todos os Movimentos
+        </button>
+        <button
+          class="btn"
+          id="downloadEnBtn"
+          onclick="downloadJSON('en')"
+          disabled
+        >
+          💾 Baixar moves-en.json
+        </button>
+      </div>
+
+      <div class="section">
+        <h2>Passo 2: Traduzir Automaticamente</h2>
+        <button
+          class="btn"
+          id="translateBtn"
+          onclick="translateMoves()"
+          disabled
+        >
+          🌐 Traduzir para Português
+        </button>
+        <button
+          class="btn"
+          id="stopBtn"
+          onclick="stopTranslation()"
+          disabled
+          style="background: #ff4444"
+        >
+          ⏸️ Parar Tradução
+        </button>
+        <button
+          class="btn"
+          id="downloadPtBtn"
+          onclick="downloadJSON('pt')"
+          disabled
+        >
+          💾 Baixar moves-pt.json (Parcial)
+        </button>
+      </div>
+
+      <div class="section">
+        <h2>Passo 3: Continuar Tradução</h2>
+        <input
+          type="file"
+          id="uploadJson"
+          accept=".json"
+          style="display: none"
+          onchange="loadExistingTranslations(event)"
+        />
+        <button
+          class="btn"
+          onclick="document.getElementById('uploadJson').click()"
+        >
+          📂 Carregar moves-pt.json Parcial
+        </button>
+        <button
+          class="btn"
+          id="continueBtn"
+          onclick="continueTranslation()"
+          disabled
+        >
+          ▶️ Continuar Tradução
+        </button>
+      </div>
+
+      <div class="progress" id="progress">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill">0%</div>
+        </div>
+        <p id="progressText">Preparando...</p>
+      </div>
+
+      <div class="log" id="log"></div>
+    </div>
+
+    <script>
+      const API_BASE = "https://pokeapi.co/api/v2";
+      let movesDataEN = {};
+      let movesDataPT = {};
+      let allMovesList = []; // Lista ordenada de todos os movimentos
+      let shouldStop = false;
+      let retryAfter = 0;
+
+      function log(message, type = "info") {
+        const logEl = document.getElementById("log");
+        const entry = document.createElement("div");
+        entry.className = `log-entry ${type}`;
+        entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        logEl.appendChild(entry);
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+
+      function stopTranslation() {
+        shouldStop = true;
+        log("⏸️ Parando tradução...", "warning");
+        document.getElementById("stopBtn").disabled = true;
+      }
+
+      function loadExistingTranslations(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          try {
+            const loaded = JSON.parse(e.target.result);
+            movesDataPT = loaded;
+            const count = Object.keys(loaded).length;
+            log(`✅ Carregado ${count} movimentos já traduzidos!`, "success");
+            log(
+              `📍 Último movimento: ${Object.keys(loaded)[count - 1]}`,
+              "info"
+            );
+            document.getElementById("continueBtn").disabled = false;
+          } catch (error) {
+            log("❌ Erro ao ler arquivo JSON: " + error.message, "error");
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      function continueTranslation() {
+        if (Object.keys(movesDataEN).length === 0) {
+          log("⚠️ Primeiro busque os movimentos!", "warning");
+          return;
+        }
+
+        translateMoves(true);
+      }
+
+      function updateProgress(current, total) {
+        const percent = Math.round((current / total) * 100);
+        document.getElementById("progressFill").style.width = percent + "%";
+        document.getElementById("progressFill").textContent = percent + "%";
+        document.getElementById(
+          "progressText"
+        ).textContent = `Processando ${current} de ${total} movimentos...`;
+      }
+
+      async function fetchAllMoves() {
+        document.getElementById("fetchBtn").disabled = true;
+        document.getElementById("progress").classList.add("active");
+        log("Iniciando busca de movimentos...", "info");
+
+        try {
+          // Buscar lista de todos os movimentos
+          log("Buscando lista de movimentos da PokeAPI...", "info");
+          const response = await fetch(`${API_BASE}/move?limit=2000`);
+          const data = await response.json();
+
+          log(`✅ Encontrados ${data.results.length} movimentos!`, "success");
+
+          movesDataEN = {};
+          let processed = 0;
+
+          // Buscar detalhes de cada movimento
+          for (const move of data.results) {
+            try {
+              const moveResponse = await fetch(move.url);
+              const moveData = await moveResponse.json();
+
+              const description =
+                moveData.effect_entries.find((e) => e.language.name === "en")
+                  ?.short_effect ||
+                moveData.flavor_text_entries.find(
+                  (e) => e.language.name === "en"
+                )?.flavor_text ||
+                "No description available";
+
+              const cleanDescription = description
+                .replace(/\n/g, " ")
+                .replace(/\s+/g, " ")
+                .trim();
+              movesDataEN[moveData.name] = cleanDescription;
+
+              processed++;
+              updateProgress(processed, data.results.length);
+
+              if (processed % 50 === 0) {
+                log(
+                  `Processados ${processed}/${data.results.length}...`,
+                  "info"
+                );
+              }
+
+              await new Promise((resolve) => setTimeout(resolve, 30));
+            } catch (error) {
+              log(`Erro ao buscar ${move.name}: ${error.message}`, "error");
+            }
+          }
+
+          log(
+            `✅ Busca concluída! ${processed} movimentos carregados`,
+            "success"
+          );
+          document.getElementById("downloadEnBtn").disabled = false;
+          document.getElementById("translateBtn").disabled = false;
+        } catch (error) {
+          log(`❌ Erro: ${error.message}`, "error");
+        }
+
+        document.getElementById("fetchBtn").disabled = false;
+      }
+
+      async function translateMoves() {
+        if (Object.keys(movesDataEN).length === 0) {
+          log("⚠️ Primeiro busque os movimentos!", "warning");
+          return;
+        }
+
+        document.getElementById("translateBtn").disabled = true;
+        document.getElementById("progress").classList.add("active");
+        log("Iniciando tradução automática...", "info");
+
+        movesDataPT = {};
+        const moves = Object.entries(movesDataEN);
+        let processed = 0;
+
+        for (const [name, description] of moves) {
+          try {
+            // Traduzir usando API gratuita MyMemory
+            const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(
+              description
+            )}&langpair=en|pt`;
+            const response = await fetch(url);
+            const data = await response.json();
+
+            movesDataPT[name] = data.responseData.translatedText || description;
+
+            processed++;
+            updateProgress(processed, moves.length);
+
+            if (processed % 10 === 0) {
+              log(`Traduzidos ${processed}/${moves.length}...`, "info");
+              await new Promise((resolve) => setTimeout(resolve, 1000)); // Delay para não exceder rate limit
+            }
+          } catch (error) {
+            log(`Erro ao traduzir ${name}: ${error.message}`, "error");
+            movesDataPT[name] = description; // Manter em inglês se falhar
+          }
+        }
+
+        log(
+          `✅ Tradução concluída! ${processed} movimentos traduzidos`,
+          "success"
+        );
+        document.getElementById("downloadPtBtn").disabled = false;
+        document.getElementById("translateBtn").disabled = false;
+      }
+
+      function downloadJSON(type) {
+        const data = type === "en" ? movesDataEN : movesDataPT;
+        const filename = `moves-${type}.json`;
+
+        const blob = new Blob([JSON.stringify(data, null, 2)], {
+          type: "application/json",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        log(`✅ Download de ${filename} iniciado!`, "success");
+      }
+    </script>
+  </body>
+</html>
