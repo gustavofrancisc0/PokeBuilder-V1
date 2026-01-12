@@ -2919,7 +2919,9 @@ tr.neutral td {
 
 .recommendation-card .pokemon-types span {
   font-size: 0.65rem;
-  padding: 2px 8px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  color: var(--white);
 }
 
 /* ========================================

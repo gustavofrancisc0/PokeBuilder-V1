@@ -140,6 +140,7 @@ const wikiElements = {
   
   // Evoluções
   evolutionSearch: document.getElementById('evolutionSearch'),
+  evolutionAutocomplete: document.getElementById('evolutionAutocomplete'),
   evolutionSearchBtn: document.getElementById('evolutionSearchBtn'),
   evolutionResult: document.getElementById('evolutionResult'),
   popularEvolutions: document.getElementById('popularEvolutions'),
@@ -166,6 +167,7 @@ const wikiElements = {
   // Itens
   itemCategoryFilter: document.getElementById('itemCategoryFilter'),
   itemSearch: document.getElementById('itemSearch'),
+  itemAutocomplete: document.getElementById('itemAutocomplete'),
   itemsLoading: document.getElementById('itemsLoading'),
   itemsGrid: document.getElementById('itemsGrid'),
   itemsLoadMore: document.getElementById('itemsLoadMore'),
@@ -483,13 +485,23 @@ async function displayMorePokedex() {
   
   const pokemonToShow = wikiState.filteredPokemon.slice(start, end);
   
+  // Set para rastrear IDs já exibidos e evitar duplicatas
+  const displayedIds = new Set();
+  wikiElements.pokedexGrid.querySelectorAll('.pokedex-card').forEach(card => {
+    const numberText = card.querySelector('.pokedex-card-number')?.textContent;
+    if (numberText) {
+      displayedIds.add(parseInt(numberText.replace('#', '')));
+    }
+  });
+  
   // Buscar detalhes em paralelo (batches de 12)
   for (let i = 0; i < pokemonToShow.length; i += 12) {
     const batch = pokemonToShow.slice(i, i + 12);
     const details = await Promise.all(batch.map(p => fetchPokemonData(p.id)));
     
     details.forEach(pokemon => {
-      if (pokemon) {
+      if (pokemon && !displayedIds.has(pokemon.id)) {
+        displayedIds.add(pokemon.id);
         const card = createPokedexCard(pokemon);
         wikiElements.pokedexGrid.appendChild(card);
       }
@@ -497,7 +509,7 @@ async function displayMorePokedex() {
   }
   
   wikiState.displayedPokemonCount = end;
-  wikiElements.filteredPokemonCount.textContent = end;
+  wikiElements.filteredPokemonCount.textContent = wikiElements.pokedexGrid.querySelectorAll('.pokedex-card').length;
   
   // Mostrar/ocultar botão de carregar mais
   if (wikiState.displayedPokemonCount < wikiState.filteredPokemon.length) {
@@ -574,6 +586,16 @@ async function filterPokedex() {
     
     filtered = filtered.filter(pokemon => pokemonWithType.has(pokemon.name));
   }
+  
+  // Remover duplicatas baseado no ID
+  const seenIds = new Set();
+  filtered = filtered.filter(pokemon => {
+    if (seenIds.has(pokemon.id)) {
+      return false;
+    }
+    seenIds.add(pokemon.id);
+    return true;
+  });
   
   // Ordenar
   const [sortBy, sortDir] = sortOption.split('-');
@@ -1009,13 +1031,23 @@ async function displayMoreItems() {
   
   const itemsToShow = wikiState.filteredItems.slice(start, end);
   
+  // Set para rastrear itens já exibidos e evitar duplicatas
+  const displayedItems = new Set();
+  wikiElements.itemsGrid.querySelectorAll('.item-card').forEach(card => {
+    const itemName = card.querySelector('.item-name')?.textContent;
+    if (itemName) {
+      displayedItems.add(itemName.toLowerCase().replace(/ /g, '-'));
+    }
+  });
+  
   // Buscar detalhes em paralelo (batches)
   for (let i = 0; i < itemsToShow.length; i += 12) {
     const batch = itemsToShow.slice(i, i + 12);
     const details = await Promise.all(batch.map(item => fetchItemData(item.name)));
     
     details.forEach(item => {
-      if (item && item.sprites.default) {
+      if (item && item.sprites.default && !displayedItems.has(item.name)) {
+        displayedItems.add(item.name);
         const card = createItemCard(item);
         wikiElements.itemsGrid.appendChild(card);
       }
@@ -1050,21 +1082,64 @@ function createItemCard(item) {
 
 async function filterItems() {
   const category = wikiElements.itemCategoryFilter.value;
-  const searchTerm = wikiElements.itemSearch.value.toLowerCase().trim();
+  // Converter termo de busca para o formato da API (espaços viram hífens)
+  const searchTerm = wikiElements.itemSearch.value.toLowerCase().trim().replace(/ /g, '-');
   
   wikiElements.itemsGrid.innerHTML = '';
   wikiState.displayedItemsCount = 0;
+  wikiElements.itemsLoading.style.display = 'block';
   
-  // Filtrar por categoria (simplificado)
+  // Fechar autocomplete
+  if (wikiElements.itemAutocomplete) {
+    wikiElements.itemAutocomplete.classList.remove('show');
+  }
+  
   let filtered = [...wikiState.allItems];
   
+  // Filtrar por busca de texto
   if (searchTerm) {
     filtered = filtered.filter(item => item.name.toLowerCase().includes(searchTerm));
+  }
+  
+  // Filtrar por categoria - precisamos buscar detalhes dos itens
+  if (category) {
+    const categoryMap = {
+      'healing': ['healing', 'revival', 'status-cures', 'hp-restore', 'pp-restore'],
+      'pokeballs': ['standard-balls', 'special-balls', 'apricorn-balls', 'pokeballs'],
+      'held-items': ['held-items', 'choice', 'type-enhancement', 'plates', 'jewels', 'type-protection'],
+      'evolution': ['evolution', 'mega-stones', 'evo-items'],
+      'medicine': ['medicine', 'pp-recovery', 'flutes', 'remedies'],
+      'vitamins': ['vitamins', 'stat-boosts', 'effort-training'],
+      'tm': ['all-machines', 'machines', 'tms', 'hms']
+    };
+    
+    const categoryTerms = categoryMap[category] || [category];
+    
+    const filteredByCategory = [];
+    
+    // Processar em batches para performance
+    for (let i = 0; i < Math.min(filtered.length, 300); i += 20) {
+      const batch = filtered.slice(i, i + 20);
+      const details = await Promise.all(batch.map(item => fetchItemData(item.name)));
+      
+      details.forEach((itemData, idx) => {
+        if (itemData && itemData.category) {
+          const itemCategoryName = itemData.category.name.toLowerCase();
+          if (categoryTerms.some(term => itemCategoryName.includes(term))) {
+            filteredByCategory.push(batch[idx]);
+          }
+        }
+      });
+    }
+    
+    filtered = filteredByCategory;
   }
   
   wikiState.filteredItems = filtered;
   
   await displayMoreItems();
+  
+  wikiElements.itemsLoading.style.display = 'none';
 }
 
 function openItemModal(item) {
@@ -1569,6 +1644,111 @@ async function showRegionPokemon(regionName) {
   }
 }
 
+// ===== AUTOCOMPLETE DE ITENS =====
+
+function initItemAutocomplete() {
+  let debounceTimer;
+  let autocompleteIndex = -1;
+  
+  wikiElements.itemSearch.addEventListener('input', (e) => {
+    clearTimeout(debounceTimer);
+    const query = e.target.value.trim().toLowerCase();
+    
+    if (query.length < 2) {
+      wikiElements.itemAutocomplete.classList.remove('show');
+      wikiElements.itemAutocomplete.innerHTML = '';
+      autocompleteIndex = -1;
+      return;
+    }
+    
+    debounceTimer = setTimeout(() => {
+      showItemAutocompleteSuggestions(query);
+    }, 150);
+  });
+  
+  wikiElements.itemSearch.addEventListener('keydown', (e) => {
+    const items = wikiElements.itemAutocomplete.querySelectorAll('.autocomplete-item');
+    
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      autocompleteIndex = Math.min(autocompleteIndex + 1, items.length - 1);
+      updateItemAutocompleteHighlight(items, autocompleteIndex);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      autocompleteIndex = Math.max(autocompleteIndex - 1, 0);
+      updateItemAutocompleteHighlight(items, autocompleteIndex);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (autocompleteIndex >= 0 && items[autocompleteIndex]) {
+        items[autocompleteIndex].click();
+      } else {
+        wikiElements.itemAutocomplete.classList.remove('show');
+        filterItems();
+      }
+      autocompleteIndex = -1;
+    } else if (e.key === 'Escape') {
+      wikiElements.itemAutocomplete.classList.remove('show');
+      autocompleteIndex = -1;
+    }
+  });
+  
+  // Fechar ao clicar fora
+  document.addEventListener('click', (e) => {
+    if (!wikiElements.itemSearch.contains(e.target) && !wikiElements.itemAutocomplete.contains(e.target)) {
+      wikiElements.itemAutocomplete.classList.remove('show');
+      autocompleteIndex = -1;
+    }
+  });
+}
+
+async function showItemAutocompleteSuggestions(query) {
+  // Filtrar itens da lista (apenas pelo nome, sem fazer requisições)
+  const matches = wikiState.allItems.filter(item => 
+    item.name.toLowerCase().includes(query)
+  ).slice(0, 8);
+  
+  if (matches.length === 0) {
+    wikiElements.itemAutocomplete.innerHTML = '<div class="autocomplete-no-results">Nenhum item encontrado</div>';
+    wikiElements.itemAutocomplete.classList.add('show');
+    return;
+  }
+  
+  // Mostrar sugestões imediatamente sem buscar detalhes (para ser mais rápido)
+  wikiElements.itemAutocomplete.innerHTML = matches.map(item => `
+    <div class="autocomplete-item" data-item-name="${item.name}">
+      <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${item.name}.png" 
+           alt="${item.name}" 
+           style="width: 32px; height: 32px;"
+           onerror="this.src='https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'" />
+      <div class="autocomplete-item-info">
+        <span class="autocomplete-item-name">${formatName(item.name)}</span>
+      </div>
+    </div>
+  `).join('');
+  
+  wikiElements.itemAutocomplete.classList.add('show');
+  
+  // Adicionar eventos de clique
+  wikiElements.itemAutocomplete.querySelectorAll('.autocomplete-item').forEach(itemEl => {
+    itemEl.addEventListener('click', () => {
+      const itemName = itemEl.dataset.itemName;
+      wikiElements.itemSearch.value = formatName(itemName);
+      wikiElements.itemAutocomplete.classList.remove('show');
+      filterItems();
+    });
+  });
+}
+
+function updateItemAutocompleteHighlight(items, index) {
+  items.forEach((item, i) => {
+    item.classList.toggle('active', i === index);
+  });
+  
+  if (index >= 0 && items[index]) {
+    items[index].scrollIntoView({ block: 'nearest' });
+  }
+}
+
 // ===== UTILIDADES =====
 
 function formatName(name) {
@@ -1659,6 +1839,15 @@ function initWiki() {
       if (e.key === 'Enter') searchEvolution();
     });
   }
+  
+  // Inicializar autocomplete de evolução
+  if (wikiElements.evolutionSearch && wikiElements.evolutionAutocomplete) {
+    initAutocomplete(wikiElements.evolutionSearch, wikiElements.evolutionAutocomplete, (pokemon) => {
+      wikiElements.evolutionSearch.value = pokemon.name;
+      searchEvolution();
+    });
+  }
+  
   if (wikiElements.popularEvolutions) {
     wikiElements.popularEvolutions.querySelectorAll('.popular-evo-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -1696,8 +1885,22 @@ function initWiki() {
     wikiElements.itemCategoryFilter.addEventListener('change', filterItems);
   }
   if (wikiElements.itemSearch) {
-    wikiElements.itemSearch.addEventListener('input', filterItems);
+    wikiElements.itemSearch.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        // Fechar autocomplete e filtrar
+        if (wikiElements.itemAutocomplete) {
+          wikiElements.itemAutocomplete.classList.remove('show');
+        }
+        filterItems();
+      }
+    });
   }
+  
+  // Inicializar autocomplete de itens
+  if (wikiElements.itemSearch && wikiElements.itemAutocomplete) {
+    initItemAutocomplete();
+  }
+  
   if (wikiElements.itemsLoadMoreBtn) {
     wikiElements.itemsLoadMoreBtn.addEventListener('click', displayMoreItems);
   }
