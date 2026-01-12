@@ -119,6 +119,87 @@
         </div>
       </section>
 
+      <!-- Seção Adversary Build -->
+      <section class="adversary-section">
+        <div class="adversary-header">
+          <h2>🎯 Adversary Builder <span id="adversaryCount">(0/6)</span></h2>
+          <button id="clearAdversaryBtn" class="btn-clear" disabled>
+            Limpar Adversário
+          </button>
+        </div>
+        <p class="adversary-description">Adicione os Pokémon do adversário para analisar suas fraquezas e receber recomendações.</p>
+        
+        <!-- Busca de Pokémon Adversário -->
+        <div class="adversary-search">
+          <div class="search-input-wrapper">
+            <span class="search-icon-wiki">🔍</span>
+            <input
+              type="text"
+              id="adversarySearch"
+              placeholder="Buscar Pokémon do adversário..."
+              autocomplete="off"
+            />
+            <div class="autocomplete-dropdown" id="adversaryAutocomplete"></div>
+          </div>
+          <button id="addAdversaryBtn" class="btn-search">Adicionar</button>
+        </div>
+        
+        <div class="adversary-grid" id="adversaryGrid">
+          <div class="adversary-slot empty" data-slot="0">
+            <span class="slot-number">1</span>
+            <span class="slot-empty-text">Vazio</span>
+          </div>
+          <div class="adversary-slot empty" data-slot="1">
+            <span class="slot-number">2</span>
+            <span class="slot-empty-text">Vazio</span>
+          </div>
+          <div class="adversary-slot empty" data-slot="2">
+            <span class="slot-number">3</span>
+            <span class="slot-empty-text">Vazio</span>
+          </div>
+          <div class="adversary-slot empty" data-slot="3">
+            <span class="slot-number">4</span>
+            <span class="slot-empty-text">Vazio</span>
+          </div>
+          <div class="adversary-slot empty" data-slot="4">
+            <span class="slot-number">5</span>
+            <span class="slot-empty-text">Vazio</span>
+          </div>
+          <div class="adversary-slot empty" data-slot="5">
+            <span class="slot-number">6</span>
+            <span class="slot-empty-text">Vazio</span>
+          </div>
+        </div>
+
+        <!-- Análise do Adversário -->
+        <div class="adversary-analysis" id="adversaryAnalysis" style="display: none">
+          <h3>🔍 Análise do Adversário</h3>
+          <div class="analysis-grid">
+            <div class="analysis-card weaknesses">
+              <h4>🎯 Fraquezas do Adversário</h4>
+              <p class="analysis-hint">Tipos efetivos contra o time inimigo</p>
+              <div class="type-badges" id="adversaryWeaknesses"></div>
+            </div>
+            <div class="analysis-card resistances">
+              <h4>🛡️ Resistências do Adversário</h4>
+              <p class="analysis-hint">Evite usar estes tipos</p>
+              <div class="type-badges" id="adversaryResistances"></div>
+            </div>
+            <div class="analysis-card immunities">
+              <h4>⚡ Imunidades do Adversário</h4>
+              <p class="analysis-hint">Não use estes tipos contra eles</p>
+              <div class="type-badges" id="adversaryImmunities"></div>
+            </div>
+          </div>
+          
+          <div class="recommendations-section" id="recommendationsSection">
+            <h3>💡 Pokémon Recomendados</h3>
+            <p class="recommendations-hint">Pokémon efetivos contra as fraquezas do adversário</p>
+            <div class="recommendations-grid" id="recommendationsGrid"></div>
+          </div>
+        </div>
+      </section>
+
       <!-- Resultados da Busca -->
       <section class="results-section">
         <div class="results-header">
@@ -155,6 +236,9 @@
       <nav class="wiki-nav">
         <button class="wiki-tab active" data-wiki-tab="pokedex">
           <span>📱</span> Pokédex
+        </button>
+        <button class="wiki-tab" data-wiki-tab="types">
+          <span>⚡</span> Tipos
         </button>
         <button class="wiki-tab" data-wiki-tab="evolutions">
           <span>🔄</span> Evoluções
@@ -193,6 +277,7 @@
               placeholder="Buscar por nome ou número..."
               autocomplete="off"
             />
+            <div class="autocomplete-dropdown" id="wikiAutocomplete"></div>
             <button
               class="clear-search"
               id="clearWikiSearch"
@@ -265,6 +350,31 @@
           <button class="btn-load-more" id="wikiLoadMoreBtn">
             Carregar Mais Pokémon
           </button>
+        </div>
+      </section>
+
+      <!-- ===== TIPOS ===== -->
+      <section class="wiki-section" id="types-section">
+        <div class="wiki-header">
+          <h2>⚡ Tabela de Tipos</h2>
+          <p>Entenda as relações de força e fraqueza entre os tipos Pokémon</p>
+        </div>
+
+        <div class="types-info-box">
+          <h3>💡 Como funcionam os Tipos?</h3>
+          <p>
+            Cada tipo tem <strong>vantagens</strong> e <strong>desvantagens</strong> contra outros tipos.
+            Golpes super efetivos causam <strong>2x</strong> de dano, golpes pouco efetivos causam <strong>0.5x</strong>,
+            e algumas combinações resultam em <strong>imunidade</strong> (0x de dano).
+          </p>
+        </div>
+
+        <div class="types-grid" id="typesGrid"></div>
+
+        <!-- Modal de detalhes do tipo -->
+        <div class="type-detail-panel" id="typeDetailPanel" style="display: none;">
+          <button class="close-type-detail" id="closeTypeDetail">✕</button>
+          <div class="type-detail-content" id="typeDetailContent"></div>
         </div>
       </section>
 

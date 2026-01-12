@@ -8,6 +8,11 @@ const wikiState = {
   filteredPokemon: [],
   displayedPokemonCount: 0,
   pokemonCache: {},
+  pokemonDetailsCache: {}, // Cache para detalhes de Pokémon (para filtro de tipo)
+  
+  // Tipos
+  typesData: {},
+  typesLoaded: false,
   
   // Evoluções
   evolutionCache: {},
@@ -32,6 +37,9 @@ const wikiState = {
   // Berries
   allBerries: [],
   berriesLoaded: false,
+  
+  // Autocomplete
+  autocompleteIndex: -1,
   
   // Geral
   currentWikiTab: 'pokedex',
@@ -111,6 +119,7 @@ const wikiElements = {
   
   // Pokédex
   wikiSearch: document.getElementById('wikiSearch'),
+  wikiAutocomplete: document.getElementById('wikiAutocomplete'),
   clearWikiSearch: document.getElementById('clearWikiSearch'),
   wikiSearchBtn: document.getElementById('wikiSearchBtn'),
   wikiTypeFilter: document.getElementById('wikiTypeFilter'),
@@ -122,6 +131,12 @@ const wikiElements = {
   pokedexGrid: document.getElementById('pokedexGrid'),
   wikiLoadMore: document.getElementById('wikiLoadMore'),
   wikiLoadMoreBtn: document.getElementById('wikiLoadMoreBtn'),
+  
+  // Tipos
+  typesGrid: document.getElementById('typesGrid'),
+  typeDetailPanel: document.getElementById('typeDetailPanel'),
+  typeDetailContent: document.getElementById('typeDetailContent'),
+  closeTypeDetail: document.getElementById('closeTypeDetail'),
   
   // Evoluções
   evolutionSearch: document.getElementById('evolutionSearch'),
@@ -410,6 +425,9 @@ function loadWikiSection(section) {
     case 'pokedex':
       if (wikiState.allPokemon.length === 0) initPokedex();
       break;
+    case 'types':
+      if (!wikiState.typesLoaded) loadTypesSection();
+      break;
     case 'natures':
       if (!wikiState.naturesLoaded) loadNatures();
       break;
@@ -526,7 +544,12 @@ async function filterPokedex() {
   wikiElements.wikiLoading.style.display = 'block';
   wikiElements.pokedexGrid.innerHTML = '';
   
-  // Filtrar
+  // Fechar autocomplete
+  if (wikiElements.wikiAutocomplete) {
+    wikiElements.wikiAutocomplete.classList.remove('show');
+  }
+  
+  // Filtrar por geração primeiro (não precisa de API)
   let filtered = wikiState.allPokemon.filter(pokemon => {
     // Filtro de busca
     if (searchTerm) {
@@ -544,16 +567,12 @@ async function filterPokedex() {
     return true;
   });
   
-  // Se filtro de tipo, precisamos buscar detalhes
+  // Se há filtro de tipo, precisamos buscar detalhes
   if (typeFilter) {
-    const detailedFiltered = [];
-    for (const pokemon of filtered) {
-      const data = await fetchPokemonData(pokemon.id);
-      if (data && data.types.some(t => t.type.name === typeFilter)) {
-        detailedFiltered.push(pokemon);
-      }
-    }
-    filtered = detailedFiltered;
+    const typeData = await fetch(`${WIKI_API_BASE}/type/${typeFilter}`).then(r => r.json());
+    const pokemonWithType = new Set(typeData.pokemon.map(p => p.pokemon.name));
+    
+    filtered = filtered.filter(pokemon => pokemonWithType.has(pokemon.name));
   }
   
   // Ordenar
@@ -1193,6 +1212,288 @@ function openBerryModal(berry) {
   wikiElements.wikiDetailModal.classList.add('active');
 }
 
+// ===== TIPOS =====
+
+// Ícones dos tipos
+const typeIcons = {
+  normal: '⚪',
+  fire: '🔥',
+  water: '💧',
+  electric: '⚡',
+  grass: '🌿',
+  ice: '❄️',
+  fighting: '👊',
+  poison: '☠️',
+  ground: '🏜️',
+  flying: '🦅',
+  psychic: '🔮',
+  bug: '🐛',
+  rock: '🪨',
+  ghost: '👻',
+  dragon: '🐉',
+  dark: '🌑',
+  steel: '⚙️',
+  fairy: '🧚'
+};
+
+async function loadTypesSection() {
+  if (!wikiElements.typesGrid) return;
+  
+  wikiElements.typesGrid.innerHTML = `
+    <div class="wiki-loading">
+      <div class="pokeball-spinner"></div>
+      <p>Carregando tipos...</p>
+    </div>
+  `;
+  
+  try {
+    // Carregar dados de todos os tipos
+    const types = Object.keys(typeNames);
+    
+    await Promise.all(types.map(async (typeName) => {
+      const response = await fetch(`${WIKI_API_BASE}/type/${typeName}`);
+      const data = await response.json();
+      wikiState.typesData[typeName] = data;
+    }));
+    
+    wikiState.typesLoaded = true;
+    renderTypesGrid();
+    
+  } catch (error) {
+    console.error('Erro ao carregar tipos:', error);
+    wikiElements.typesGrid.innerHTML = '<p>Erro ao carregar tipos. Tente novamente.</p>';
+  }
+}
+
+function renderTypesGrid() {
+  const types = Object.keys(typeNames);
+  
+  wikiElements.typesGrid.innerHTML = types.map(typeName => `
+    <div class="type-card" data-type="${typeName}">
+      <div class="type-card-icon" style="background: ${typeColors[typeName]}">
+        ${typeIcons[typeName] || '❓'}
+      </div>
+      <p class="type-card-name">${typeNames[typeName]}</p>
+    </div>
+  `).join('');
+  
+  // Adicionar eventos de clique
+  wikiElements.typesGrid.querySelectorAll('.type-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const typeName = card.dataset.type;
+      showTypeDetail(typeName);
+      
+      // Marcar card como ativo
+      wikiElements.typesGrid.querySelectorAll('.type-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+    });
+  });
+}
+
+function showTypeDetail(typeName) {
+  const typeData = wikiState.typesData[typeName];
+  if (!typeData) return;
+  
+  const dr = typeData.damage_relations;
+  
+  // Ofensivo (quando ATACA)
+  const strongAgainst = dr.double_damage_to.map(t => t.name);
+  const weakAgainst = dr.half_damage_to.map(t => t.name);
+  const noEffectAgainst = dr.no_damage_to.map(t => t.name);
+  
+  // Defensivo (quando RECEBE)
+  const weakTo = dr.double_damage_from.map(t => t.name);
+  const resistsTo = dr.half_damage_from.map(t => t.name);
+  const immuneTo = dr.no_damage_from.map(t => t.name);
+  
+  wikiElements.typeDetailContent.innerHTML = `
+    <div class="type-detail-header">
+      <div class="type-detail-icon" style="background: ${typeColors[typeName]}">
+        ${typeIcons[typeName] || '❓'}
+      </div>
+      <div class="type-detail-title">
+        <h3>Tipo ${typeNames[typeName]}</h3>
+        <p>Relações de dano ofensivo e defensivo</p>
+      </div>
+    </div>
+    
+    <h4 style="margin-bottom: 15px; color: var(--dark);">⚔️ Ofensivo (Atacando)</h4>
+    <div class="type-matchups-grid">
+      <div class="type-matchup-card strong">
+        <h4>💪 Super Efetivo (2x)</h4>
+        <div class="type-matchup-badges">
+          ${strongAgainst.length > 0 
+            ? strongAgainst.map(t => `<span class="type-matchup-badge bg-${t}">${typeNames[t]}</span>`).join('')
+            : '<span style="color: #999;">Nenhum</span>'
+          }
+        </div>
+      </div>
+      <div class="type-matchup-card weak">
+        <h4>📉 Pouco Efetivo (0.5x)</h4>
+        <div class="type-matchup-badges">
+          ${weakAgainst.length > 0 
+            ? weakAgainst.map(t => `<span class="type-matchup-badge bg-${t}">${typeNames[t]}</span>`).join('')
+            : '<span style="color: #999;">Nenhum</span>'
+          }
+        </div>
+      </div>
+      <div class="type-matchup-card immune">
+        <h4>🚫 Sem Efeito (0x)</h4>
+        <div class="type-matchup-badges">
+          ${noEffectAgainst.length > 0 
+            ? noEffectAgainst.map(t => `<span class="type-matchup-badge bg-${t}">${typeNames[t]}</span>`).join('')
+            : '<span style="color: #999;">Nenhum</span>'
+          }
+        </div>
+      </div>
+    </div>
+    
+    <h4 style="margin: 25px 0 15px; color: var(--dark);">🛡️ Defensivo (Recebendo)</h4>
+    <div class="type-matchups-grid">
+      <div class="type-matchup-card weak">
+        <h4>⚠️ Fraco Contra (2x dano)</h4>
+        <div class="type-matchup-badges">
+          ${weakTo.length > 0 
+            ? weakTo.map(t => `<span class="type-matchup-badge bg-${t}">${typeNames[t]}</span>`).join('')
+            : '<span style="color: #999;">Nenhum</span>'
+          }
+        </div>
+      </div>
+      <div class="type-matchup-card resist">
+        <h4>🛡️ Resiste (0.5x dano)</h4>
+        <div class="type-matchup-badges">
+          ${resistsTo.length > 0 
+            ? resistsTo.map(t => `<span class="type-matchup-badge bg-${t}">${typeNames[t]}</span>`).join('')
+            : '<span style="color: #999;">Nenhum</span>'
+          }
+        </div>
+      </div>
+      <div class="type-matchup-card immune">
+        <h4>✨ Imune (0x dano)</h4>
+        <div class="type-matchup-badges">
+          ${immuneTo.length > 0 
+            ? immuneTo.map(t => `<span class="type-matchup-badge bg-${t}">${typeNames[t]}</span>`).join('')
+            : '<span style="color: #999;">Nenhum</span>'
+          }
+        </div>
+      </div>
+    </div>
+  `;
+  
+  wikiElements.typeDetailPanel.style.display = 'block';
+  wikiElements.typeDetailPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ===== AUTOCOMPLETE =====
+
+function initAutocomplete(inputElement, dropdownElement, onSelect) {
+  if (!inputElement || !dropdownElement) return;
+  
+  let debounceTimer;
+  
+  inputElement.addEventListener('input', (e) => {
+    clearTimeout(debounceTimer);
+    const query = e.target.value.trim().toLowerCase();
+    
+    if (query.length < 2) {
+      dropdownElement.classList.remove('show');
+      dropdownElement.innerHTML = '';
+      return;
+    }
+    
+    debounceTimer = setTimeout(() => {
+      showAutocompleteSuggestions(query, dropdownElement, onSelect);
+    }, 200);
+  });
+  
+  inputElement.addEventListener('keydown', (e) => {
+    const items = dropdownElement.querySelectorAll('.autocomplete-item');
+    
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      wikiState.autocompleteIndex = Math.min(wikiState.autocompleteIndex + 1, items.length - 1);
+      updateAutocompleteHighlight(items);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      wikiState.autocompleteIndex = Math.max(wikiState.autocompleteIndex - 1, 0);
+      updateAutocompleteHighlight(items);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (wikiState.autocompleteIndex >= 0 && items[wikiState.autocompleteIndex]) {
+        items[wikiState.autocompleteIndex].click();
+      }
+    } else if (e.key === 'Escape') {
+      dropdownElement.classList.remove('show');
+      wikiState.autocompleteIndex = -1;
+    }
+  });
+  
+  // Fechar ao clicar fora
+  document.addEventListener('click', (e) => {
+    if (!inputElement.contains(e.target) && !dropdownElement.contains(e.target)) {
+      dropdownElement.classList.remove('show');
+      wikiState.autocompleteIndex = -1;
+    }
+  });
+}
+
+async function showAutocompleteSuggestions(query, dropdownElement, onSelect) {
+  // Filtrar Pokémon da lista
+  const matches = wikiState.allPokemon.filter(p => {
+    const matchesName = p.name.toLowerCase().includes(query);
+    const matchesId = p.id.toString() === query;
+    return matchesName || matchesId;
+  }).slice(0, 8);
+  
+  if (matches.length === 0) {
+    dropdownElement.innerHTML = '<div class="autocomplete-no-results">Nenhum Pokémon encontrado</div>';
+    dropdownElement.classList.add('show');
+    return;
+  }
+  
+  // Buscar detalhes dos matches para mostrar sprites e tipos
+  const details = await Promise.all(matches.map(m => fetchPokemonData(m.id)));
+  
+  dropdownElement.innerHTML = details.filter(d => d).map(pokemon => `
+    <div class="autocomplete-item" data-pokemon-id="${pokemon.id}" data-pokemon-name="${pokemon.name}">
+      <img src="${pokemon.sprites.front_default || 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'}" alt="${pokemon.name}" />
+      <div class="autocomplete-item-info">
+        <span class="autocomplete-item-name">${pokemon.name}</span>
+        <span class="autocomplete-item-number">#${String(pokemon.id).padStart(3, '0')}</span>
+      </div>
+      <div class="autocomplete-item-types">
+        ${pokemon.types.map(t => `<span class="bg-${t.type.name}">${typeNames[t.type.name] || t.type.name}</span>`).join('')}
+      </div>
+    </div>
+  `).join('');
+  
+  dropdownElement.classList.add('show');
+  wikiState.autocompleteIndex = -1;
+  
+  // Adicionar eventos de clique
+  dropdownElement.querySelectorAll('.autocomplete-item').forEach(item => {
+    item.addEventListener('click', async () => {
+      const pokemonId = parseInt(item.dataset.pokemonId);
+      const pokemon = await fetchPokemonData(pokemonId);
+      if (onSelect && pokemon) {
+        onSelect(pokemon);
+      }
+      dropdownElement.classList.remove('show');
+      wikiState.autocompleteIndex = -1;
+    });
+  });
+}
+
+function updateAutocompleteHighlight(items) {
+  items.forEach((item, index) => {
+    item.classList.toggle('active', index === wikiState.autocompleteIndex);
+  });
+  
+  if (wikiState.autocompleteIndex >= 0 && items[wikiState.autocompleteIndex]) {
+    items[wikiState.autocompleteIndex].scrollIntoView({ block: 'nearest' });
+  }
+}
+
 // ===== REGIÕES =====
 
 function initRegions() {
@@ -1277,6 +1578,13 @@ function formatName(name) {
     .join(' ');
 }
 
+function sanitizeHTML(str) {
+  if (typeof str !== "string") return "";
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
 function closeWikiDetailModal() {
   wikiElements.wikiDetailModal.classList.remove('active');
 }
@@ -1289,6 +1597,22 @@ function initWiki() {
   
   // Inicializar regiões
   initRegions();
+  
+  // Inicializar autocomplete da Pokédex
+  if (wikiElements.wikiSearch && wikiElements.wikiAutocomplete) {
+    initAutocomplete(wikiElements.wikiSearch, wikiElements.wikiAutocomplete, (pokemon) => {
+      wikiElements.wikiSearch.value = pokemon.name;
+      filterPokedex();
+    });
+  }
+  
+  // Event Listeners - Tipos
+  if (wikiElements.closeTypeDetail) {
+    wikiElements.closeTypeDetail.addEventListener('click', () => {
+      wikiElements.typeDetailPanel.style.display = 'none';
+      wikiElements.typesGrid.querySelectorAll('.type-card').forEach(c => c.classList.remove('active'));
+    });
+  }
   
   // Event Listeners - Pokédex
   if (wikiElements.wikiSearchBtn) {
@@ -1307,6 +1631,9 @@ function initWiki() {
     wikiElements.clearWikiSearch.addEventListener('click', () => {
       wikiElements.wikiSearch.value = '';
       wikiElements.clearWikiSearch.style.display = 'none';
+      if (wikiElements.wikiAutocomplete) {
+        wikiElements.wikiAutocomplete.classList.remove('show');
+      }
       filterPokedex();
     });
   }
