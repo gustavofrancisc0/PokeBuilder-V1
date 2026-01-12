@@ -13,6 +13,11 @@ const state = {
   teamMoves: {}, // { pokemonId: [move1, move2, move3, move4] }
   translationCache: {}, // Cache para traduções
   movesTranslations: null, // Traduções dos movimentos carregadas do JSON
+  
+  // Adversary Builder
+  adversary: [],
+  allPokemonList: [], // Lista de todos os Pokémon para autocomplete
+  adversaryAutocompleteIndex: -1,
 };
 
 // Nomes dos tipos em português
@@ -81,6 +86,20 @@ const elements = {
   modal: document.getElementById("pokemonModal"),
   modalClose: document.getElementById("modalClose"),
   modalBody: document.getElementById("modalBody"),
+  
+  // Adversary Builder
+  adversarySearch: document.getElementById("adversarySearch"),
+  adversaryAutocomplete: document.getElementById("adversaryAutocomplete"),
+  addAdversaryBtn: document.getElementById("addAdversaryBtn"),
+  adversaryGrid: document.getElementById("adversaryGrid"),
+  adversaryCount: document.getElementById("adversaryCount"),
+  clearAdversaryBtn: document.getElementById("clearAdversaryBtn"),
+  adversaryAnalysis: document.getElementById("adversaryAnalysis"),
+  adversaryWeaknesses: document.getElementById("adversaryWeaknesses"),
+  adversaryResistances: document.getElementById("adversaryResistances"),
+  adversaryImmunities: document.getElementById("adversaryImmunities"),
+  recommendationsGrid: document.getElementById("recommendationsGrid"),
+  recommendationsSection: document.getElementById("recommendationsSection"),
 };
 
 // ===== FUNÇÕES DE API =====
@@ -1159,6 +1178,363 @@ function getStatColor(value) {
   return "#1d3557";
 }
 
+// ===== ADVERSARY BUILDER =====
+
+async function loadAllPokemonList() {
+  try {
+    const response = await fetch(`${API_BASE}/pokemon?limit=1025`);
+    const data = await response.json();
+    state.allPokemonList = data.results.map((p, index) => ({
+      name: p.name,
+      id: index + 1,
+      url: p.url
+    }));
+    console.log(`✅ Lista de Pokémon carregada: ${state.allPokemonList.length}`);
+  } catch (error) {
+    console.error("Erro ao carregar lista de Pokémon:", error);
+  }
+}
+
+function initAdversaryAutocomplete() {
+  if (!elements.adversarySearch || !elements.adversaryAutocomplete) return;
+  
+  let debounceTimer;
+  
+  elements.adversarySearch.addEventListener('input', (e) => {
+    clearTimeout(debounceTimer);
+    const query = e.target.value.trim().toLowerCase();
+    
+    if (query.length < 2) {
+      elements.adversaryAutocomplete.classList.remove('show');
+      elements.adversaryAutocomplete.innerHTML = '';
+      return;
+    }
+    
+    debounceTimer = setTimeout(() => {
+      showAdversaryAutocompleteSuggestions(query);
+    }, 200);
+  });
+  
+  elements.adversarySearch.addEventListener('keydown', (e) => {
+    const items = elements.adversaryAutocomplete.querySelectorAll('.autocomplete-item');
+    
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      state.adversaryAutocompleteIndex = Math.min(state.adversaryAutocompleteIndex + 1, items.length - 1);
+      updateAdversaryAutocompleteHighlight(items);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      state.adversaryAutocompleteIndex = Math.max(state.adversaryAutocompleteIndex - 1, 0);
+      updateAdversaryAutocompleteHighlight(items);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (state.adversaryAutocompleteIndex >= 0 && items[state.adversaryAutocompleteIndex]) {
+        items[state.adversaryAutocompleteIndex].click();
+      } else if (query.length >= 2) {
+        addAdversaryByName();
+      }
+    } else if (e.key === 'Escape') {
+      elements.adversaryAutocomplete.classList.remove('show');
+      state.adversaryAutocompleteIndex = -1;
+    }
+  });
+  
+  // Fechar ao clicar fora
+  document.addEventListener('click', (e) => {
+    if (!elements.adversarySearch.contains(e.target) && !elements.adversaryAutocomplete.contains(e.target)) {
+      elements.adversaryAutocomplete.classList.remove('show');
+      state.adversaryAutocompleteIndex = -1;
+    }
+  });
+}
+
+async function showAdversaryAutocompleteSuggestions(query) {
+  // Filtrar Pokémon da lista
+  const matches = state.allPokemonList.filter(p => {
+    const matchesName = p.name.toLowerCase().includes(query);
+    const matchesId = p.id.toString() === query;
+    return matchesName || matchesId;
+  }).slice(0, 8);
+  
+  if (matches.length === 0) {
+    elements.adversaryAutocomplete.innerHTML = '<div class="autocomplete-no-results">Nenhum Pokémon encontrado</div>';
+    elements.adversaryAutocomplete.classList.add('show');
+    return;
+  }
+  
+  // Buscar detalhes dos matches
+  const details = await Promise.all(matches.map(m => fetchPokemonDetails(m.id)));
+  
+  elements.adversaryAutocomplete.innerHTML = details.filter(d => d).map(pokemon => `
+    <div class="autocomplete-item" data-pokemon-id="${pokemon.id}" data-pokemon-name="${pokemon.name}">
+      <img src="${pokemon.sprites.front_default || 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'}" alt="${pokemon.name}" />
+      <div class="autocomplete-item-info">
+        <span class="autocomplete-item-name">${pokemon.name}</span>
+        <span class="autocomplete-item-number">#${String(pokemon.id).padStart(3, '0')}</span>
+      </div>
+      <div class="autocomplete-item-types">
+        ${pokemon.types.map(t => `<span class="bg-${t.type.name}">${typeNames[t.type.name] || t.type.name}</span>`).join('')}
+      </div>
+    </div>
+  `).join('');
+  
+  elements.adversaryAutocomplete.classList.add('show');
+  state.adversaryAutocompleteIndex = -1;
+  
+  // Adicionar eventos de clique
+  elements.adversaryAutocomplete.querySelectorAll('.autocomplete-item').forEach(item => {
+    item.addEventListener('click', async () => {
+      const pokemonId = parseInt(item.dataset.pokemonId);
+      await addToAdversary(pokemonId);
+      elements.adversaryAutocomplete.classList.remove('show');
+      elements.adversarySearch.value = '';
+      state.adversaryAutocompleteIndex = -1;
+    });
+  });
+}
+
+function updateAdversaryAutocompleteHighlight(items) {
+  items.forEach((item, index) => {
+    item.classList.toggle('active', index === state.adversaryAutocompleteIndex);
+  });
+  
+  if (state.adversaryAutocompleteIndex >= 0 && items[state.adversaryAutocompleteIndex]) {
+    items[state.adversaryAutocompleteIndex].scrollIntoView({ block: 'nearest' });
+  }
+}
+
+async function addAdversaryByName() {
+  const name = elements.adversarySearch.value.trim().toLowerCase();
+  if (!name) return;
+  
+  const pokemon = await fetchPokemonDetails(name);
+  if (pokemon) {
+    await addToAdversary(pokemon.id);
+    elements.adversarySearch.value = '';
+    elements.adversaryAutocomplete.classList.remove('show');
+  } else {
+    alert('Pokémon não encontrado. Verifique o nome e tente novamente.');
+  }
+}
+
+async function addToAdversary(pokemonId) {
+  if (state.adversary.length >= 6) {
+    alert('O time adversário já está completo (6 Pokémon).');
+    return;
+  }
+  
+  // Verificar se já está no time adversário
+  if (state.adversary.some(p => p.id === pokemonId)) {
+    alert('Este Pokémon já está no time adversário.');
+    return;
+  }
+  
+  const pokemon = await fetchPokemonDetails(pokemonId);
+  if (!pokemon) return;
+  
+  // Pré-carregar dados de tipo
+  for (const t of pokemon.types) {
+    await fetchTypeData(t.type.name);
+  }
+  
+  state.adversary.push(pokemon);
+  updateAdversaryUI();
+  updateAdversaryAnalysis();
+}
+
+function removeFromAdversary(pokemonId) {
+  state.adversary = state.adversary.filter(p => p.id !== pokemonId);
+  updateAdversaryUI();
+  updateAdversaryAnalysis();
+}
+
+function clearAdversary() {
+  state.adversary = [];
+  updateAdversaryUI();
+  updateAdversaryAnalysis();
+}
+
+function updateAdversaryUI() {
+  const slots = elements.adversaryGrid.querySelectorAll(".adversary-slot");
+  
+  slots.forEach((slot, index) => {
+    if (state.adversary[index]) {
+      const pokemon = state.adversary[index];
+      slot.className = "adversary-slot filled";
+      slot.innerHTML = `
+        <span class="slot-number">${index + 1}</span>
+        <img class="pokemon-sprite" 
+             src="${pokemon.sprites.other["official-artwork"].front_default || pokemon.sprites.front_default}" 
+             alt="${pokemon.name}"
+             title="${pokemon.name}">
+        <button class="remove-btn" data-pokemon-id="${pokemon.id}">×</button>
+      `;
+      
+      // Evento de remover
+      slot.querySelector(".remove-btn").addEventListener("click", (e) => {
+        e.stopPropagation();
+        removeFromAdversary(pokemon.id);
+      });
+      
+      // Evento de clique para ver detalhes
+      slot.addEventListener("click", () => {
+        openPokemonModal(pokemon);
+      });
+    } else {
+      slot.className = "adversary-slot empty";
+      slot.innerHTML = `
+        <span class="slot-number">${index + 1}</span>
+        <span class="slot-empty-text">Vazio</span>
+      `;
+    }
+  });
+  
+  elements.adversaryCount.textContent = `(${state.adversary.length}/6)`;
+  elements.clearAdversaryBtn.disabled = state.adversary.length === 0;
+}
+
+function updateAdversaryAnalysis() {
+  if (state.adversary.length === 0) {
+    elements.adversaryAnalysis.style.display = "none";
+    return;
+  }
+  
+  elements.adversaryAnalysis.style.display = "block";
+  
+  // Coletar fraquezas, resistências e imunidades do adversário
+  const weaknessCount = {};
+  const resistanceCount = {};
+  const immunitySet = new Set();
+  
+  state.adversary.forEach(pokemon => {
+    const types = pokemon.types.map(t => t.type.name);
+    const matchups = calculateMatchups(types);
+    
+    // Fraquezas do adversário = onde DEVEMOS atacar
+    matchups.weaknesses.forEach(type => {
+      weaknessCount[type] = (weaknessCount[type] || 0) + 1;
+    });
+    
+    // Resistências do adversário = tipos que devemos EVITAR
+    matchups.resistances.forEach(type => {
+      resistanceCount[type] = (resistanceCount[type] || 0) + 1;
+    });
+    
+    // Imunidades do adversário = tipos que NÃO FUNCIONAM
+    matchups.immunities.forEach(type => {
+      immunitySet.add(type);
+    });
+  });
+  
+  // Ordenar por quantidade
+  const sortedWeaknesses = Object.entries(weaknessCount)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10);
+  
+  const sortedResistances = Object.entries(resistanceCount)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8);
+  
+  // Renderizar fraquezas (onde atacar)
+  elements.adversaryWeaknesses.innerHTML = sortedWeaknesses.length > 0
+    ? sortedWeaknesses.map(([type, count]) => `
+        <span class="type-badge bg-${type}" title="${count} Pokémon fracos contra ${typeNames[type]}">
+          ${typeNames[type] || type} <span class="mult">(${count})</span>
+        </span>
+      `).join('')
+    : '<span style="color: #999;">Nenhuma fraqueza comum</span>';
+  
+  // Renderizar resistências (evitar)
+  elements.adversaryResistances.innerHTML = sortedResistances.length > 0
+    ? sortedResistances.map(([type, count]) => `
+        <span class="type-badge bg-${type}" title="${count} Pokémon resistem a ${typeNames[type]}">
+          ${typeNames[type] || type} <span class="mult">(${count})</span>
+        </span>
+      `).join('')
+    : '<span style="color: #999;">Nenhuma resistência comum</span>';
+  
+  // Renderizar imunidades (não usar)
+  elements.adversaryImmunities.innerHTML = immunitySet.size > 0
+    ? Array.from(immunitySet).map(type => `
+        <span class="type-badge bg-${type}">
+          ${typeNames[type] || type}
+        </span>
+      `).join('')
+    : '<span style="color: #999;">Nenhuma imunidade</span>';
+  
+  // Gerar recomendações de Pokémon
+  generateRecommendations(sortedWeaknesses.map(w => w[0]));
+}
+
+async function generateRecommendations(targetWeaknesses) {
+  if (targetWeaknesses.length === 0) {
+    elements.recommendationsGrid.innerHTML = '<p style="color: #999;">Adicione Pokémon adversários para ver recomendações.</p>';
+    return;
+  }
+  
+  elements.recommendationsGrid.innerHTML = `
+    <div class="wiki-loading" style="grid-column: 1 / -1;">
+      <div class="pokeball-spinner"></div>
+      <p>Buscando recomendações...</p>
+    </div>
+  `;
+  
+  try {
+    // Pegar Pokémon dos tipos mais efetivos contra as fraquezas do adversário
+    const recommendations = new Set();
+    
+    for (const weakType of targetWeaknesses.slice(0, 3)) {
+      const typeData = state.typeData[weakType];
+      if (!typeData) continue;
+      
+      // Pokémon que são FORTES ofensivamente contra este tipo
+      // Precisamos de tipos que causam 2x de dano ao tipo fraco
+      for (const strongType of Object.keys(state.typeData)) {
+        const strongTypeData = state.typeData[strongType];
+        if (strongTypeData.damage_relations.double_damage_to.some(t => t.name === weakType)) {
+          // Pegar alguns Pokémon deste tipo forte
+          const typePokemon = strongTypeData.pokemon.slice(0, 5);
+          typePokemon.forEach(p => recommendations.add(p.pokemon.name));
+        }
+      }
+    }
+    
+    // Buscar detalhes dos Pokémon recomendados (limitado a 12)
+    const recommendedNames = Array.from(recommendations).slice(0, 12);
+    const details = await Promise.all(recommendedNames.map(name => fetchPokemonDetails(name)));
+    
+    const validRecommendations = details.filter(p => p !== null);
+    
+    if (validRecommendations.length === 0) {
+      elements.recommendationsGrid.innerHTML = '<p style="color: #999;">Não foram encontradas recomendações.</p>';
+      return;
+    }
+    
+    elements.recommendationsGrid.innerHTML = validRecommendations.map(pokemon => `
+      <div class="recommendation-card" data-pokemon-id="${pokemon.id}">
+        <img src="${pokemon.sprites.other['official-artwork'].front_default || pokemon.sprites.front_default}" alt="${pokemon.name}" />
+        <p class="pokemon-name">${pokemon.name}</p>
+        <div class="pokemon-types">
+          ${pokemon.types.map(t => `<span class="bg-${t.type.name}">${typeNames[t.type.name]}</span>`).join('')}
+        </div>
+      </div>
+    `).join('');
+    
+    // Adicionar eventos de clique
+    elements.recommendationsGrid.querySelectorAll('.recommendation-card').forEach(card => {
+      card.addEventListener('click', async () => {
+        const pokemonId = parseInt(card.dataset.pokemonId);
+        const pokemon = await fetchPokemonDetails(pokemonId);
+        if (pokemon) openPokemonModal(pokemon);
+      });
+    });
+    
+  } catch (error) {
+    console.error('Erro ao gerar recomendações:', error);
+    elements.recommendationsGrid.innerHTML = '<p style="color: #999;">Erro ao buscar recomendações.</p>';
+  }
+}
+
 // ===== UTILIDADES =====
 function showLoading(show) {
   elements.loading.style.display = show ? "block" : "none";
@@ -1214,6 +1590,12 @@ async function init() {
 
     // Carregar traduções dos movimentos
     await loadMovesTranslations();
+    
+    // Carregar lista de Pokémon para autocomplete
+    await loadAllPokemonList();
+    
+    // Inicializar autocomplete do adversário
+    initAdversaryAutocomplete();
   } catch (error) {
     console.error("Erro na inicialização:", error);
     showError(
@@ -1229,6 +1611,14 @@ async function init() {
   elements.loadMoreBtn.addEventListener("click", displayMorePokemon);
   elements.sortBy.addEventListener("change", sortResults);
   elements.modalClose.addEventListener("click", closePokemonModal);
+  
+  // Event Listeners - Adversary Builder
+  if (elements.addAdversaryBtn) {
+    elements.addAdversaryBtn.addEventListener("click", addAdversaryByName);
+  }
+  if (elements.clearAdversaryBtn) {
+    elements.clearAdversaryBtn.addEventListener("click", clearAdversary);
+  }
 
   // Fechar modal ao clicar fora
   elements.modal.addEventListener("click", (e) => {
