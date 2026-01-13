@@ -5,6 +5,9 @@
 ![PokéBuilder](https://img.shields.io/badge/Pok%C3%A9Builder-v1.0-red)
 ![Status](https://img.shields.io/badge/status-active-success)
 
+## 🎨 Inspiração
+- Esse projeto foi inspirado em um outro projeto do [@codedbylucas](https://github.com/codedbylucas)
+
 ## 📋 Sobre o Projeto
 
 O **PokéBuilder** é uma aplicação web completa para treinadores Pokémon. Inclui um construtor de times com análise de fraquezas/resistências e uma Wiki completa com informações sobre Pokémon, evoluções, naturezas, habilidades, itens, berries e regiões.
@@ -99,7 +102,7 @@ Busca todas as habilidades da PokéAPI e traduz automaticamente para português.
 - **[PokéAPI](https://pokeapi.co/)**: Dados de Pokémon, movimentos, habilidades, itens, etc.
 - **[MyMemory Translation](https://mymemory.translated.net/)**: Tradução automática (usado nas ferramentas)
 
-## 🎨 Tecnologias
+## 💻 Tecnologias
 
 - HTML5
 - CSS3 (Custom Properties, Grid, Flexbox)
