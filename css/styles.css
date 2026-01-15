@@ -2911,6 +2911,19 @@ tr.neutral td {
   color: var(--gray-700);
 }
 
+/* Coverage badge - shows how many adversaries this Pokémon counters */
+.recommendation-coverage {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 3px 6px;
+  border-radius: 10px;
+  background: var(--secondary);
+  color: white;
+}
+
 /* Score-based styling */
 .recommendation-card.score-excellent {
   border-color: #22c55e;
