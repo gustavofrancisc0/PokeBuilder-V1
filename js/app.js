@@ -1462,8 +1462,81 @@ function updateAdversaryAnalysis() {
       `).join('')
     : '<span style="color: #999;">Nenhuma imunidade</span>';
   
-  // Gerar recomendações de Pokémon
+  // Gerar recomendações de Pokémon com análise completa
   generateRecommendations(sortedWeaknesses.map(w => w[0]));
+}
+
+// Calcula as vantagens ofensivas do adversário (tipos que ele causa dano super-efetivo)
+function getAdversaryOffensiveStrengths() {
+  const offensiveTypes = new Set();
+  
+  state.adversary.forEach(pokemon => {
+    pokemon.types.forEach(t => {
+      const typeData = state.typeData[t.type.name];
+      if (typeData && typeData.damage_relations) {
+        typeData.damage_relations.double_damage_to.forEach(target => {
+          offensiveTypes.add(target.name);
+        });
+      }
+    });
+  });
+  
+  return Array.from(offensiveTypes);
+}
+
+// Calcula um score de recomendação para um Pokémon contra o adversário
+function calculateRecommendationScore(pokemon, adversaryWeaknesses, adversaryOffensiveStrengths, adversaryTypes) {
+  const pokemonTypes = pokemon.types.map(t => t.type.name);
+  let score = 0;
+  let reasons = [];
+  
+  // === OFENSIVO: Pokémon causa dano super-efetivo no adversário? ===
+  pokemonTypes.forEach(pType => {
+    const typeData = state.typeData[pType];
+    if (!typeData) return;
+    
+    // Verifica se este tipo do Pokémon causa dano super-efetivo em algum tipo do adversário
+    typeData.damage_relations.double_damage_to.forEach(target => {
+      if (adversaryTypes.includes(target.name)) {
+        score += 30; // Grande bônus por dano super-efetivo
+        reasons.push(`${typeNames[pType]} → super-efetivo contra ${typeNames[target.name]}`);
+      }
+    });
+  });
+  
+  // === DEFENSIVO: Pokémon é fraco aos tipos do adversário? ===
+  const pokemonMatchups = calculateMatchups(pokemonTypes);
+  
+  adversaryTypes.forEach(advType => {
+    if (pokemonMatchups.weaknesses.includes(advType)) {
+      score -= 25; // Penalidade severa por ser fraco ao tipo do adversário
+      reasons.push(`⚠️ Fraco contra ${typeNames[advType]} do adversário`);
+    }
+    if (pokemonMatchups.resistances.includes(advType)) {
+      score += 15; // Bônus por resistir ao tipo do adversário
+      reasons.push(`Resiste a ${typeNames[advType]}`);
+    }
+    if (pokemonMatchups.immunities.includes(advType)) {
+      score += 25; // Grande bônus por imunidade ao tipo do adversário
+      reasons.push(`Imune a ${typeNames[advType]}`);
+    }
+  });
+  
+  // === EXTRA: Pokémon é do tipo das fraquezas do adversário? ===
+  adversaryWeaknesses.forEach(weakType => {
+    if (pokemonTypes.includes(weakType)) {
+      score += 10; // Bônus por ser do tipo efetivo
+    }
+  });
+  
+  // === PENALIDADE: Pokémon é fraco aos tipos ofensivos do adversário? ===
+  adversaryOffensiveStrengths.forEach(offType => {
+    if (pokemonMatchups.weaknesses.includes(offType) && !adversaryTypes.includes(offType)) {
+      score -= 10; // Penalidade menor (já coberto acima se for tipo do adversário)
+    }
+  });
+  
+  return { score, reasons };
 }
 
 async function generateRecommendations(targetWeaknesses) {
@@ -1475,52 +1548,83 @@ async function generateRecommendations(targetWeaknesses) {
   elements.recommendationsGrid.innerHTML = `
     <div class="wiki-loading" style="grid-column: 1 / -1;">
       <div class="pokeball-spinner"></div>
-      <p>Buscando recomendações...</p>
+      <p>Analisando matchups e buscando recomendações...</p>
     </div>
   `;
   
   try {
-    // Pegar Pokémon dos tipos que exploram as fraquezas do adversário
-    // Se o adversário é fraco a Água, recomendamos Pokémon do tipo Água
-    const recommendations = new Set();
+    // Coletar todos os tipos do adversário
+    const adversaryTypes = [];
+    state.adversary.forEach(pokemon => {
+      pokemon.types.forEach(t => {
+        if (!adversaryTypes.includes(t.type.name)) {
+          adversaryTypes.push(t.type.name);
+        }
+      });
+    });
     
-    for (const weakType of targetWeaknesses.slice(0, 3)) {
-      // Buscar dados do tipo da fraqueza (o tipo que causa dano super eficaz)
+    // Obter vantagens ofensivas do adversário
+    const adversaryOffensiveStrengths = getAdversaryOffensiveStrengths();
+    
+    // Coletar candidatos de todos os tipos das fraquezas
+    const candidateNames = new Set();
+    
+    for (const weakType of targetWeaknesses.slice(0, 5)) {
       let typeData = state.typeData[weakType];
       
-      // Se não temos os dados em cache, buscar da API
       if (!typeData) {
         typeData = await fetchTypeData(weakType);
       }
       
       if (!typeData) continue;
       
-      // Pegar Pokémon DESTE tipo (o tipo da fraqueza)
-      // Esses Pokémon causam dano super eficaz no adversário
-      const typePokemon = typeData.pokemon.slice(0, 5);
-      typePokemon.forEach(p => recommendations.add(p.pokemon.name));
+      // Pegar mais Pokémon para ter melhor seleção após scoring
+      const typePokemon = typeData.pokemon.slice(0, 15);
+      typePokemon.forEach(p => candidateNames.add(p.pokemon.name));
     }
     
-    // Buscar detalhes dos Pokémon recomendados (limitado a 12)
-    const recommendedNames = Array.from(recommendations).slice(0, 12);
-    const details = await Promise.all(recommendedNames.map(name => fetchPokemonDetails(name)));
+    // Buscar detalhes de todos os candidatos
+    const candidateList = Array.from(candidateNames).slice(0, 30);
+    const details = await Promise.all(candidateList.map(name => fetchPokemonDetails(name)));
+    const validCandidates = details.filter(p => p !== null);
     
-    const validRecommendations = details.filter(p => p !== null);
-    
-    if (validRecommendations.length === 0) {
+    if (validCandidates.length === 0) {
       elements.recommendationsGrid.innerHTML = '<p style="color: #999;">Não foram encontradas recomendações.</p>';
       return;
     }
     
-    elements.recommendationsGrid.innerHTML = validRecommendations.map(pokemon => `
-      <div class="recommendation-card" data-pokemon-id="${pokemon.id}">
-        <img src="${pokemon.sprites.other['official-artwork'].front_default || pokemon.sprites.front_default}" alt="${pokemon.name}" />
-        <p class="pokemon-name">${pokemon.name}</p>
-        <div class="pokemon-types">
-          ${pokemon.types.map(t => `<span class="bg-${t.type.name}">${typeNames[t.type.name]}</span>`).join('')}
+    // Calcular score para cada candidato
+    const scoredCandidates = validCandidates.map(pokemon => {
+      const { score, reasons } = calculateRecommendationScore(
+        pokemon, 
+        targetWeaknesses, 
+        adversaryOffensiveStrengths, 
+        adversaryTypes
+      );
+      return { pokemon, score, reasons };
+    });
+    
+    // Ordenar por score (maior = melhor)
+    scoredCandidates.sort((a, b) => b.score - a.score);
+    
+    // Pegar os 12 melhores
+    const topRecommendations = scoredCandidates.slice(0, 12);
+    
+    elements.recommendationsGrid.innerHTML = topRecommendations.map(({ pokemon, score, reasons }) => {
+      const scoreClass = score >= 30 ? 'score-excellent' : score >= 10 ? 'score-good' : score >= 0 ? 'score-neutral' : 'score-bad';
+      const reasonsTooltip = reasons.slice(0, 3).join('\n');
+      
+      return `
+        <div class="recommendation-card ${scoreClass}" data-pokemon-id="${pokemon.id}" title="${reasonsTooltip}">
+          <div class="recommendation-score">${score > 0 ? '+' : ''}${score}</div>
+          <img src="${pokemon.sprites.other['official-artwork'].front_default || pokemon.sprites.front_default}" alt="${pokemon.name}" />
+          <p class="pokemon-name">${pokemon.name}</p>
+          <div class="pokemon-types">
+            ${pokemon.types.map(t => `<span class="bg-${t.type.name}">${typeNames[t.type.name]}</span>`).join('')}
+          </div>
         </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
     
     // Adicionar eventos de clique
     elements.recommendationsGrid.querySelectorAll('.recommendation-card').forEach(card => {

@@ -2889,12 +2889,67 @@ tr.neutral td {
   cursor: pointer;
   transition: all 0.3s;
   border: 2px solid transparent;
+  position: relative;
 }
 
 .recommendation-card:hover {
   background: var(--white);
   border-color: var(--primary);
   transform: translateY(-3px);
+}
+
+/* Score badge */
+.recommendation-score {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: var(--gray-300);
+  color: var(--gray-700);
+}
+
+/* Score-based styling */
+.recommendation-card.score-excellent {
+  border-color: #22c55e;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+}
+
+.recommendation-card.score-excellent .recommendation-score {
+  background: #22c55e;
+  color: white;
+}
+
+.recommendation-card.score-good {
+  border-color: #84cc16;
+  background: linear-gradient(135deg, #fefce8 0%, #ecfccb 100%);
+}
+
+.recommendation-card.score-good .recommendation-score {
+  background: #84cc16;
+  color: white;
+}
+
+.recommendation-card.score-neutral {
+  border-color: var(--gray-300);
+}
+
+.recommendation-card.score-neutral .recommendation-score {
+  background: var(--gray-400);
+  color: var(--gray-700);
+}
+
+.recommendation-card.score-bad {
+  border-color: #ef4444;
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  opacity: 0.7;
+}
+
+.recommendation-card.score-bad .recommendation-score {
+  background: #ef4444;
+  color: white;
 }
 
 .recommendation-card img {
