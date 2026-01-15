@@ -1480,23 +1480,25 @@ async function generateRecommendations(targetWeaknesses) {
   `;
   
   try {
-    // Pegar Pokémon dos tipos mais efetivos contra as fraquezas do adversário
+    // Pegar Pokémon dos tipos que exploram as fraquezas do adversário
+    // Se o adversário é fraco a Água, recomendamos Pokémon do tipo Água
     const recommendations = new Set();
     
     for (const weakType of targetWeaknesses.slice(0, 3)) {
-      const typeData = state.typeData[weakType];
+      // Buscar dados do tipo da fraqueza (o tipo que causa dano super eficaz)
+      let typeData = state.typeData[weakType];
+      
+      // Se não temos os dados em cache, buscar da API
+      if (!typeData) {
+        typeData = await fetchTypeData(weakType);
+      }
+      
       if (!typeData) continue;
       
-      // Pokémon que são FORTES ofensivamente contra este tipo
-      // Precisamos de tipos que causam 2x de dano ao tipo fraco
-      for (const strongType of Object.keys(state.typeData)) {
-        const strongTypeData = state.typeData[strongType];
-        if (strongTypeData.damage_relations.double_damage_to.some(t => t.name === weakType)) {
-          // Pegar alguns Pokémon deste tipo forte
-          const typePokemon = strongTypeData.pokemon.slice(0, 5);
-          typePokemon.forEach(p => recommendations.add(p.pokemon.name));
-        }
-      }
+      // Pegar Pokémon DESTE tipo (o tipo da fraqueza)
+      // Esses Pokémon causam dano super eficaz no adversário
+      const typePokemon = typeData.pokemon.slice(0, 5);
+      typePokemon.forEach(p => recommendations.add(p.pokemon.name));
     }
     
     // Buscar detalhes dos Pokémon recomendados (limitado a 12)
