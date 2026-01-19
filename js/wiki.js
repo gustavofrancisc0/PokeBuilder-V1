@@ -526,8 +526,14 @@ function createPokedexCard(pokemon) {
   card.className = 'pokedex-card';
   card.style.setProperty('--type-color', typeColors[primaryType]);
   
+  // Verificar se está ordenando por Status Base
+  const sortOption = wikiElements.wikiSortFilter?.value || '';
+  const showBaseStats = sortOption.startsWith('basestats');
+  const baseStatsTotal = pokemon.stats ? pokemon.stats.reduce((sum, stat) => sum + stat.base_stat, 0) : 0;
+  
   card.innerHTML = `
     <span class="pokedex-card-number">#${String(pokemon.id).padStart(3, '0')}</span>
+    ${showBaseStats ? `<span class="base-stats-badge" title="Total de Status Base">⚡ ${baseStatsTotal}</span>` : ''}
     <img 
       class="pokedex-card-sprite" 
       src="${pokemon.sprites.other['official-artwork'].front_default || pokemon.sprites.front_default}" 
@@ -599,16 +605,39 @@ async function filterPokedex() {
   
   // Ordenar
   const [sortBy, sortDir] = sortOption.split('-');
-  filtered.sort((a, b) => {
-    if (sortBy === 'id') {
-      return sortDir === 'asc' ? a.id - b.id : b.id - a.id;
-    } else if (sortBy === 'name') {
-      return sortDir === 'asc' 
-        ? a.name.localeCompare(b.name) 
-        : b.name.localeCompare(a.name);
+  
+  // Se ordenando por status base, height ou weight, precisamos buscar detalhes primeiro
+  if (sortBy === 'basestats' || sortBy === 'height' || sortBy === 'weight') {
+    // Buscar detalhes dos Pokémon filtrados para ordenação
+    const detailsPromises = filtered.map(p => fetchPokemonData(p.id));
+    const detailedPokemon = await Promise.all(detailsPromises);
+    
+    // Filtrar nulos e ordenar
+    filtered = detailedPokemon.filter(p => p !== null);
+    
+    if (sortBy === 'basestats') {
+      filtered.sort((a, b) => {
+        const totalA = a.stats.reduce((sum, stat) => sum + stat.base_stat, 0);
+        const totalB = b.stats.reduce((sum, stat) => sum + stat.base_stat, 0);
+        return sortDir === 'asc' ? totalA - totalB : totalB - totalA;
+      });
+    } else if (sortBy === 'height') {
+      filtered.sort((a, b) => sortDir === 'asc' ? a.height - b.height : b.height - a.height);
+    } else if (sortBy === 'weight') {
+      filtered.sort((a, b) => sortDir === 'asc' ? a.weight - b.weight : b.weight - a.weight);
     }
-    return 0;
-  });
+  } else {
+    filtered.sort((a, b) => {
+      if (sortBy === 'id') {
+        return sortDir === 'asc' ? a.id - b.id : b.id - a.id;
+      } else if (sortBy === 'name') {
+        return sortDir === 'asc' 
+          ? a.name.localeCompare(b.name) 
+          : b.name.localeCompare(a.name);
+      }
+      return 0;
+    });
+  }
   
   wikiState.filteredPokemon = filtered;
   wikiState.displayedPokemonCount = 0;

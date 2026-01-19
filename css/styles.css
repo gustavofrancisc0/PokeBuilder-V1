@@ -619,6 +619,24 @@ body {
   border-radius: 50%;
 }
 
+/* Badge de Status Base Total */
+.base-stats-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.85) 100%);
+  color: #ffd700;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  z-index: 2;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
 .pokemon-sprite {
   width: 120px;
   height: 120px;
@@ -1692,6 +1710,24 @@ body {
   background: var(--white);
   padding: 2px 8px;
   border-radius: 10px;
+}
+
+/* Badge de Status Base na Pokedex */
+.pokedex-card .base-stats-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.85) 100%);
+  color: #ffd700;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 15px;
+  z-index: 2;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
 
 .pokedex-card-sprite {

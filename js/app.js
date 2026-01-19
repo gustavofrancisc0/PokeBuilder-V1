@@ -310,6 +310,10 @@ function createPokemonCard(pokemon) {
 
   // Calcular forças e fraquezas
   const matchups = calculateMatchups(pokemon.types.map((t) => t.type.name));
+  
+  // Calcular total de status base
+  const baseStatsTotal = calculateBaseStatsTotal(pokemon);
+  const showBaseStats = elements.sortBy.value === "baseStats";
 
   card.innerHTML = `
         <div class="pokemon-card-header">
@@ -320,6 +324,7 @@ function createPokemonCard(pokemon) {
                  }" 
                  alt="${pokemon.name}"
                  loading="lazy">
+            ${showBaseStats ? `<span class="base-stats-badge" title="Total de Status Base">⚡ ${baseStatsTotal}</span>` : ''}
         </div>
         <div class="pokemon-card-body">
             <span class="pokemon-number">#${String(pokemon.id).padStart(
@@ -1717,11 +1722,23 @@ function sanitizeHTML(str) {
   return div.innerHTML;
 }
 
+// Função para calcular o total de status base de um Pokémon
+function calculateBaseStatsTotal(pokemon) {
+  return pokemon.stats.reduce((total, stat) => total + stat.base_stat, 0);
+}
+
 function sortResults() {
   const sortBy = elements.sortBy.value;
 
   if (sortBy === "name") {
     state.currentResults.sort((a, b) => a.name.localeCompare(b.name));
+  } else if (sortBy === "baseStats") {
+    // Ordenar por soma total dos status base (maior para menor)
+    state.currentResults.sort((a, b) => {
+      const totalA = calculateBaseStatsTotal(a);
+      const totalB = calculateBaseStatsTotal(b);
+      return totalB - totalA; // Ordem decrescente
+    });
   } else {
     state.currentResults.sort((a, b) => a.id - b.id);
   }
